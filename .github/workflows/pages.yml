@@ -1,0 +1,54 @@
+name: Deploy LinkRadar to GitHub Pages
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "web/linkradar/dist/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Let an active deployment finish; keep only the latest pending deployment.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # Manual runs also publish only from the current default branch.
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Check exported site files
+        shell: bash
+        run: |
+          test -s web/linkradar/dist/index.html
+          test -s web/linkradar/dist/app.css
+          test -s web/linkradar/dist/app.js
+          test -s web/linkradar/dist/assets/data.js
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload static site
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: web/linkradar/dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -21,3 +21,14 @@
 支持网络切换、原始ID筛选、介数/度数排序、全节点分页、CSV下载、局部网络点选/缩放/平移、失效曲线与性能诊断。此页面不向服务器提交任务；若未来需要实时计算，再加后端队列和API。
 
 浏览器验收说明：应用内浏览器仅允许HTTP/HTTPS，不允许直接导航file协议；本轮通过127.0.0.1本地HTTP验证了页面、切换、搜索、排序、分页和节点点选。离线文件入口使用相邻data.js而非fetch，不需联网；直接文件打开未在该内置浏览器中实测。
+
+## 发布到GitHub Pages
+
+已提供[部署工作流](../../.github/workflows/pages.yml)。它只发布`web/linkradar/dist/`内的导出结果，不安装Python依赖或重新运行实验。
+
+1. 在仓库Settings → Pages → Build and deployment中，将Source设为GitHub Actions。
+2. 提交并推送工作流到`master`。此后推送网页目录或工作流本身的修改，会自动发布。
+3. 也可在Actions中选择“Deploy LinkRadar to GitHub Pages” → Run workflow，分支选择`master`。
+4. 工作流成功后，使用部署记录中的地址访问，核验网络切换、节点搜索、图片和CSV下载。
+
+按当前仓库名，默认项目地址预计为 https://lyx0902.github.io/LinkRadar/ 。仅创建此工作流不代表已经上线；最终地址与状态以GitHub Pages部署记录为准。修改Python算法后，应先在本地计算、验证并重新导出网页，再提交新的展示结果。
