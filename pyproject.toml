@@ -11,6 +11,7 @@ dependencies = ["numpy>=1.26", "networkx>=3.2", "pandas>=2.1", "matplotlib>=3.8"
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "psutil>=5.9"]
+compiled = ["numba>=0.68,<0.69"]
 
 [project.scripts]
 linkradar = "parallel_bc.cli:main"

@@ -8,3 +8,8 @@ ca_grqc:
   official_page: https://snap.stanford.edu/data/ca-GrQc.html
   official_nodes: 5242
   official_edges: 14496
+youtube:
+  url: https://snap.stanford.edu/data/bigdata/communities/com-youtube.ungraph.txt.gz
+  official_page: https://snap.stanford.edu/data/com-Youtube.html
+  official_nodes: 1134890
+  official_edges: 2987624

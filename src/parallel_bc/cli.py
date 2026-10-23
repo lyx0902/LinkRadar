@@ -43,6 +43,44 @@ def parser():
             d.add_argument("--attach", type=int, default=3)
             d.add_argument("--avg-degree", type=float, default=6)
             d.add_argument("--name", required=True)
+    d = ds.add_parser("prepare-csr", help="严格导入文本并生成独立CSR缓存")
+    _common(d)
+    d.add_argument("--dataset", required=True)
+    d.add_argument("--path", required=True)
+    d.add_argument("--format", dest="file_format", choices=["snap", "konect"], default="snap")
+    d.add_argument("--provenance", help="原文件审计JSON，SHA必须匹配")
+    d.add_argument("--timeout", type=float, default=300)
+    d.add_argument("--reserve-gib", type=float, default=3)
+    d = subs.add_parser("large-pilot", help="完整CSR图上的受预算固定起点试算")
+    _common(d)
+    d.add_argument("--dataset", required=True, help="CSR目录名，如youtube_csr")
+    d.add_argument("--counts", type=int, nargs="+", default=[1, 4, 8])
+    d.add_argument("--backend", choices=["python_tuple", "python_csr", "numba_csr"], default="python_tuple")
+    d.add_argument("--seed", type=int, default=42)
+    d.add_argument("--timeout", type=float, default=120, help="每案例墙钟上限")
+    d.add_argument("--total-timeout", type=float, default=1800)
+    d.add_argument("--reserve-gib", type=float, default=3)
+    d = subs.add_parser("compiled-compare", help="同源配对比较Python与Numba单核CSR")
+    _common(d)
+    d.add_argument("--dataset", required=True)
+    d.add_argument("--sources", type=int, default=8)
+    d.add_argument("--repeats", type=int, default=3)
+    d.add_argument("--seed", type=int, default=42)
+    d.add_argument("--timeout", type=float, default=240)
+    d.add_argument("--total-timeout", type=float, default=1200)
+    d.add_argument("--reserve-gib", type=float, default=2)
+    d = subs.add_parser("compiled-scale", help="同一Numba内核的1/2/4线程扩展实验")
+    _common(d)
+    d.add_argument("--dataset", required=True)
+    d.add_argument("--sources", type=int, default=64)
+    d.add_argument("--threads", type=int, nargs="+", default=[1, 2, 4])
+    d.add_argument("--batch-size", type=int, default=4)
+    d.add_argument("--repeats", type=int, default=3)
+    d.add_argument("--seed", type=int, default=42)
+    d.add_argument("--timeout", type=float, default=120)
+    d.add_argument("--total-timeout", type=float, default=900)
+    d.add_argument("--reserve-gib", type=float, default=2)
+    d.add_argument("--cpu-affinity", type=int, nargs="+", help="限定计算子进程的逻辑CPU集合；所有线程配置用同一集合")
     for name in ("centrality", "validate", "robustness"):
         d = subs.add_parser(name)
         _common(d)
@@ -106,6 +144,52 @@ def dispatch(args):
     from .data import download_dataset, import_dataset, load_cached_graph, prepare_dataset, save_graph
     from .generators import generate_graph
     from .robustness import ranking_rows
+    if args.command == "compiled-scale":
+        from .compiled_scaling import run_scaling
+        if not np.isfinite(args.reserve_gib) or args.reserve_gib < 0:
+            raise ValueError("reserve-gib必须非负且有限")
+        dest = run_scaling(_dataset_path(args.data_dir, args.dataset), args.output_dir,
+            source_count=args.sources, threads=args.threads, batch_size=args.batch_size,
+            repeats=args.repeats, seed=args.seed, max_case_seconds=args.timeout,
+            max_total_seconds=args.total_timeout, min_available_bytes=int(args.reserve_gib * 2**30),
+            cpu_affinity=args.cpu_affinity)
+        status = json.loads((dest / "manifest.json").read_text(encoding="utf-8"))["status"]
+        print(f"编译版线程扩展：{status}；报告：{dest / 'report.md'}")
+        return 0 if status == "complete" else 2
+    if args.command == "compiled-compare":
+        from .compiled_benchmark import run_comparison
+        if not np.isfinite(args.reserve_gib) or args.reserve_gib < 0:
+            raise ValueError("reserve-gib必须非负且有限")
+        dest = run_comparison(_dataset_path(args.data_dir, args.dataset), args.output_dir,
+            source_count=args.sources, repeats=args.repeats, seed=args.seed,
+            max_case_seconds=args.timeout, max_total_seconds=args.total_timeout,
+            min_available_bytes=int(args.reserve_gib * 2**30))
+        status = json.loads((dest / "manifest.json").read_text(encoding="utf-8"))["status"]
+        print(f"编译版配对比较：{status}；报告：{dest / 'report.md'}")
+        return 0 if status == "complete" else 2
+    if args.command == "large-pilot":
+        from .large_benchmark import run_pilot
+        if not np.isfinite(args.reserve_gib) or args.reserve_gib < 0:
+            raise ValueError("reserve-gib必须非负且有限")
+        dest = run_pilot(_dataset_path(args.data_dir, args.dataset), args.output_dir,
+            counts=args.counts, backend=args.backend, seed=args.seed,
+            max_case_seconds=args.timeout, max_total_seconds=args.total_timeout,
+            min_available_bytes=int(args.reserve_gib * 2**30))
+        status = json.loads((dest / "manifest.json").read_text(encoding="utf-8"))["status"]
+        print(f"固定起点试算状态：{status}；报告：{dest / 'report.md'}")
+        return 0 if status == "complete" else 2
+    if args.command == "data" and args.data_command == "prepare-csr":
+        from .large_benchmark import run_preparation
+        if not np.isfinite(args.reserve_gib) or args.reserve_gib < 0:
+            raise ValueError("reserve-gib必须非负且有限")
+        dest = _dataset_path(args.data_dir, args.dataset + "_csr")
+        if dest.exists():
+            raise ValueError(f"CSR目标已存在，不覆盖：{dest}")
+        row = run_preparation(args.path, dest, dataset_id=args.dataset,
+            file_format=args.file_format, provenance_path=args.provenance,
+            timeout_seconds=args.timeout, min_available_bytes=int(args.reserve_gib * 2**30))
+        print(json.dumps(row, ensure_ascii=False, indent=2))
+        return 0 if row["status"] == "ok" else 2
     if args.command == "data":
         if args.data_command == "download":
             print(download_dataset(args.dataset, args.data_dir, timeout=args.timeout, retries=args.retries))

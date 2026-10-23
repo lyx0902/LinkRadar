@@ -4,8 +4,10 @@ cycler==0.12.1
 fonttools==4.67.0
 iniconfig==2.3.1
 kiwisolver==1.5.1
+llvmlite==0.50.0
 matplotlib==3.11.2
 networkx==3.7
+numba==0.68.0
 numpy==2.5.4
 packaging==26.3
 pandas==3.1.0

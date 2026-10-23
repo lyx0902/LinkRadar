@@ -34,6 +34,14 @@ LinkRadar在无权无向网络中，用自写全起点精确Brandes识别最短�
 
 详细说明与验证限制见 [Web README](web/linkradar/README.md)；全套数据导入、长实验、复测和报告生成命令集中在[展示与运行指南](docs/DEMO_GUIDE.md)。
 
+## YouTube百万边数据
+
+新增独立CSR缓存与受预算的固定起点短试算入口，支持本地KONECT格式。准备、运行命令及结果边界见[YouTube CSR说明](docs/YOUTUBE_CSR.md)。部分起点输出是未缩放贡献，不是全图精确介数。
+
+新增可选Numba单核后端及同源配对比较；安装、数学原理、整数溢出保护和计时边界见[编译版Brandes说明](docs/COMPILED_BRANDES.md)。
+
+编译内核还支持共享只读CSR的源级线程并行，使用`compiled-scale`比较1/2/4线程；调度、归并与指标说明见[编译版多核实现](docs/COMPILED_PARALLEL.md)。
+
 ## 数据与证据放在哪里
 
 | 目录 | 内容 |

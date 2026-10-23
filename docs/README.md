@@ -28,6 +28,9 @@
 | [原文件审计](real_data_audit.json) | 重复边、自环、原文件哈希及清洗后规模 |
 | [真实图索引](real_result_index.json) | 定位两张真实图首轮运行目录；配对复测见当前结果报告 |
 | [Web使用说明](../web/linkradar/README.md) | 启动页面、功能及浏览器验证限制 |
+| [YouTube CSR导入与试算](YOUTUBE_CSR.md) | 百万节点图、预算与源子集贡献语义 |
+| [编译版Brandes原理与运行](COMPILED_BRANDES.md) | Numba单核、数学递推、溢出回退与同源计时 |
+| [编译版多核实现](COMPILED_PARALLEL.md) | 共享只读图、私有工作区、源级线程并行与扩展实验 |
 
 `results/` 保存原始实验结果，`node_insights/` 保存展示附件，JSON/CSV不是额外的阅读任务。自动生成的阶段性摘要放入 `results/summaries/`，docs只保留当前说明与展示附件。
 
