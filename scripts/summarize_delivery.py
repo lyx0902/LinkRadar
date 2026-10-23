@@ -35,22 +35,11 @@ def main():
                    and read(p).get("status") == "complete"
                    and yaml.safe_load((p.parent / "config_resolved.yaml").read_text(encoding="utf-8-sig")) == desired]
         if not matches:
-            raise RuntimeError(f"尚无最终源码完整 {profile} 实验；请等待实际运行完成")
+            raise RuntimeError(f"没有保留匹配的完整 {profile} 实验；如需合成摘要，请先重跑对应配置")
         chosen[profile] = matches[-1]
 
-    out = ["# LinkRadar 合成实验阶段摘要", "", "本页只汇总指定合成实验。当前项目状态和后续真实图复测请看 [统一结果](RESULTS.md)。", "", "日期：2026-10-23（Asia/Shanghai）。以下数字均取自实际运行文件。", "",
-           "## 交付状态", "", "P0 功能与小规模端到端验收已完成。P1 完成真实 PID/批次时间线和固定种子起点乱序配置；粗粒度静态分配补充项尚未实现。本摘要不包含真实网络全图及后续配对复测；不能据本页判断整个项目未做真实图。", "",
-           "保留用户修改的原方案，前后 SHA256 均为 `DCB9CDA0D3EF554B0A25DAA75643C4444321F02A19C6572B9578A02D4868C0A5`。未提交或推送；`.idea` 在会话期间出现外部修改，未重置。", "",
-           f"最终源码指纹：`{fingerprint}`。各实验清单分别记录源码、配置和图的 SHA256。", "",
-           "## 安装与测试", "", "实际 Python 3.12.6，依赖版本见 [requirements-lock.txt](../requirements-lock.txt)。", "",
-           "```powershell", '.\\.venv\\Scripts\\python.exe -m pip install -e ".[dev]" --index-url https://pypi.org/simple',
-           '.\\.venv\\Scripts\\python.exe -m pytest -q', '.\\.venv\\Scripts\\python.exe -m pip check',
-           '.\\.venv\\Scripts\\python.exe scripts/verify_cli.py', "```", "",
-           "该合成验收阶段的历史测试：**110 passed in 20.49s**（当前汇总的较新验证见统一结果）；依赖检查：**No broken requirements found**。CLI 验证7条命令全部 exit 0，精确参数/输出见 [cli_verification.json](cli_verification.json)。", "",
-           "测试涵盖五节点可读标签样例、空图/路径/星形/完全/多最短路径/非连通/孤立点、随机小图全节点 NetworkX raw/normalized 对照、真实 spawn p=1/2/3 与边界批次、异常与超时回收、数据清洗与缓存篡改、手工导入及离线 CLI 全流程。", "",
-           "新增回归实际启动 supervisor 和两个孙进程后触发硬截止，三个 PID 全部消失；还验证拒绝变更图时保留旧证据、中断后进程/任务日志先于成功状态持久化、预检失败恢复及原始计时保留。", "",
-           "调试中出现过依赖尚未安装完成导致的导入失败，以及Windows CLI本地编码导致的一项测试失败；安装完成并统一UTF-8后均已修复。默认阿里云镜像下载停滞，停止本会话安装进程后改用官方PyPI成功。", "",
-           "## 最终实际实验", "", "下表均为最终源码、无并行pytest干扰的独立实验；此前调试轮次留在 results 中，不混入下列统计。", "",
+    out = ["# LinkRadar 合成实验阶段摘要", "", "本页只汇总本地存在且与源码、配置匹配的合成运行。当前真实图结果见[统一结果](RESULTS.md)。", "",
+           f"源码指纹：`{fingerprint}`。所有数字取自实际运行文件；不包含pytest或连接探测记录。", "",
            "| 配置 | 图和案例 | 状态 | 实际报告 |", "|---|---|---|---|"]
     for profile, directory in chosen.items():
         manifest = read(directory / "manifest.json")
@@ -69,20 +58,10 @@ def main():
         if r["mode"] == "serial" or r["p_used"] == "2":
             out.append("| " + " | ".join([r["dataset_id"], r["mode"], *[f"{float(r[k]):.6f}" for k in ("median_total", "median_steady", "speedup_total", "speedup_steady")]]) + " |")
     maximum = max(float(r["max_abs_error"]) for r in rows(quick / "timings_raw.csv"))
-    out += ["", f"quick 84个计时案例全部成功，串并行全节点最大 raw 误差为 **{maximum:.6g}**；每张图 NetworkX 参照见各子目录 validation.json。"]
+    out += ["", f"quick {len(rows(quick / 'timings_raw.csv'))}个计时案例全部成功，串并行全节点最大 raw 误差为 **{maximum:.6g}**；每张图 NetworkX 参照见各子目录 validation.json。"]
     if all(float(r["speedup_total"]) < 1 for r in summary if r["mode"] != "serial"):
         out += ["所有已测并行配置的 total 均慢于同核心串行。spawn启动耗时有直接记录；稳态部分有加速，但不能据此声称端到端加速。后台负载和温度等因素未独立控制，结论仅适用于本次规模和环境。"]
-    out += ["", "规模、批次、误差、total/steady加速、失效、工作进程忙碌时间、P1时间线均有真实图表。单个目录未覆盖的实验用明确缺测面板说明，可分别在quick、granularity、diagnostic中查看对应实测图。", "",
-            "## 早期真实数据下载尝试（历史）", "", "实际调用 prepare_dataset 对 Facebook、ca-GrQc 各尝试3次，均在TLS握手阶段报 `SSL: UNEXPECTED_EOF_WHILE_READING`；补充curl官方Facebook URL探测15秒超时。未下载到可验证文件，没有填入虚构SHA、字节数或清洗结果。完整失败记录已复制到 [download_status.json](download_status.json)；这份早期失败记录已冻结保存，data/raw 下的当前导入状态可能已更新。", "",
-            "保留 `data download`、`data prepare`、`data import` 命令和官方URL。手工导入、gzip、注释/坏行、正反重复、自环及孤立点路径均经离线测试；两张真实图后来已手工导入并完成实验，现状与命令见主说明。", "",
-            "## 未完成项与限制", "",
-            "- 本摘要只覆盖合成实验。两张真实图现已手工导入并完成研究，见统一结果；下文下载失败只属于早期历史。",
-            "- full 五次重复、最高8进程及2000/4000节点等更大规模未执行：本轮优先完成P0离线验证；保留配置与预算入口，大规模性能结论待实测。",
-            "- P1粗粒度静态分配独立补充模式未实施；已实现指定P0静态round-robin批次与动态领取，另有真实时间线和源点顺序配置。没有P2 Numba/CSR/共享内存。",
-            "- 全起点精确枚举仍使用float64贡献，允许舍入误差；spawn每进程复制图。",
-            "- 串行公共函数按起点边界检查超时；CLI/benchmark有独立监管器硬截止并回收进程树。回收可额外耗时，总预算主要约束计算，准备和最终导出可能超过预算；最终墙钟如实记录。",
-            "- 计时环境可能受限；CPU quota未知写null。没有OS层CPU利用率结论，busy_fraction只是批次墙钟诊断。",
-            "- 失效实验固定初始排名，随机带为经验分位范围；不推断真实人员身份、作者学术贡献或现实行为。", ""]
+    out += ["", "合成图和真实图分开解释；total与steady分开报告。详细配置、原始重复值、正确性与失效结果见所选运行目录。", ""]
     for profile, directory in chosen.items():
         out += [f"- {profile} 完整清单：[manifest.json](../results/{directory.name}/manifest.json)，源码指纹一致：`{read(directory/'manifest.json')['source_sha256'] == fingerprint}`。"]
     target.write_text(rebase_links("\n".join(out), target), encoding="utf-8")

@@ -26,8 +26,7 @@
 | [节点参数详细报告](node_insights/report.md) | 自动导出的Top10、raw与归一化值、度排名、割点及图表 |
 | [Facebook Top10 CSV](node_insights/facebook_top10.csv) / [ca-GrQc Top10 CSV](node_insights/ca_grqc_top10.csv) | 可复制的精确数值，不从图片抄数 |
 | [原文件审计](real_data_audit.json) | 重复边、自环、原文件哈希及清洗后规模 |
-| [最近一次交付验证记录](node_insights/verification.json) | 历史执行的pytest、依赖检查、网页与分数一致性检查 |
-| [合成实验索引](result_index.json) / [真实图索引](real_result_index.json) | 定位实际运行目录 |
+| [真实图索引](real_result_index.json) | 定位两张真实图首轮运行目录；配对复测见当前结果报告 |
 | [Web使用说明](../web/linkradar/README.md) | 启动页面、功能及浏览器验证限制 |
 
 `results/` 保存原始实验结果，`node_insights/` 保存展示附件，JSON/CSV不是额外的阅读任务。自动生成的阶段性摘要放入 `results/summaries/`，docs只保留当前说明与展示附件。

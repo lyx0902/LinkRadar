@@ -43,7 +43,7 @@
 
 用八起点、B=2、p=2的表说明静态固定交替分配与动态空闲领取的区别。两种模式使用相同批次和相同单源内核；动态不保证更快。
 
-然后展示[实际worker记录](../results/20261023T061912_984947Z_facebook_paired/workers_0_2.json)：四个不同PID分别处理1024、1024、967、1024个起点，合计4039。说明这些PID是当次历史运行，不是此刻仍在计算。需要时间线时用[SBM200独立诊断图](../results/20261023T043606_359964Z/figures/task_timeline.png)，明确不是Facebook时间线。
+然后展示[实际worker记录](../results/20261023T061912_984947Z_facebook_paired/workers_0_2.json)：四个不同PID分别处理1024、1024、967、1024个起点，合计4039。说明这些PID是当次历史运行，不是此刻仍在计算。当前保留的真实图实验没有记录逐批时间线，展示时用这份worker日志解释实际起点分工。
 
 ### 第5分钟：用正确性和计时说明“不是只创建几个进程”
 
@@ -113,7 +113,7 @@
 .\.venv\Scripts\python.exe -m pytest -q
 ```
 
-smoke会生成自己的合成数据，不依赖真实文件或网络，每次新建结果目录。它演示真实spawn与全流程，但不代表真实图性能。
+早期smoke产物已清理。主动执行此命令会重新生成合成数据与结果目录，不依赖真实文件或网络。它演示真实spawn与全流程，但不代表真实图性能。
 
 ### 手工导入真实数据
 
@@ -146,9 +146,8 @@ smoke会生成自己的合成数据，不依赖真实文件或网络，每次新
 ### 自动阶段性摘要与文档检查
 
 ```powershell
-.\.venv\Scripts\python.exe scripts/summarize_delivery.py
 .\.venv\Scripts\python.exe scripts/real_research_summary.py results/20261023T054258_364875Z
 .\.venv\Scripts\python.exe scripts/check_docs.py
 ```
 
-前两个只生成 `results/summaries/` 下的阶段性摘要与索引，不替代当前主说明，也不重跑实验。最后一个检查本地Markdown链接和流程图SVG的XML格式。
+第一个只生成 `results/summaries/` 下的真实图摘要与索引，不替代当前主说明，也不重跑实验。第二个检查本地Markdown链接和流程图SVG的XML格式。

@@ -27,7 +27,8 @@ def main():
         print(args[0], result.returncode, flush=True)
         if result.returncode:
             break
-    (base / "docs" / "cli_verification.json").write_text(json.dumps(records, ensure_ascii=False, indent=2), encoding="utf-8")
+    (base / "results").mkdir(parents=True, exist_ok=True)
+    (base / "results" / "cli_verification.json").write_text(json.dumps(records, ensure_ascii=False, indent=2), encoding="utf-8")
     return int(any(r["returncode"] for r in records))
 
 if __name__ == "__main__":

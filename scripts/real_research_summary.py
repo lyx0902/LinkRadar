@@ -62,7 +62,7 @@ def main():
               '此次原始数据来自用户手工导入；缓存校验确认本次计算对象与终端记录一致，没有独立向官方核验文件发布哈希。ca-GrQc的12个自环与正反重复已从本地原文件核实。',
               '性能结果同时提供total与steady。三次重复只刻画本机本轮波动，未控制温度/后台负载，不作跨机器推广；随机失效分位带不是置信区间。',
               '未出现在本目录清单中的实验不能视为已执行。当前项目已做的其他运行与限制见统一结果，后续复测不能混入这张表。',
-              '上一轮110项测试通过，本轮没有修改计算内核；实际真实图全节点参照和串并行一致性检查构成本轮新增验收。', '']
+              '本页仅汇总已有真实图运行的全节点参照和串并行一致性结果，不重新执行算法或pytest。', '']
     lines += ['- '+x for x in manifest.get('limitations',[])]
     target.write_text(rebase_links(text+'\n'.join(lines)+'\n',target),encoding='utf-8')
     (target.parent/'real_result_index.json').write_text(json.dumps({'run_dir':str(root),'status':manifest['status'],'source_sha256':manifest['source_sha256']},indent=2),encoding='utf-8')
