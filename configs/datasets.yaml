@@ -1,0 +1,10 @@
+facebook:
+  url: https://snap.stanford.edu/data/facebook_combined.txt.gz
+  official_page: https://snap.stanford.edu/data/ego-Facebook.html
+  official_nodes: 4039
+  official_edges: 88234
+ca_grqc:
+  url: https://snap.stanford.edu/data/ca-GrQc.txt.gz
+  official_page: https://snap.stanford.edu/data/ca-GrQc.html
+  official_nodes: 5242
+  official_edges: 14496

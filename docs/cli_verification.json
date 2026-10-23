@@ -1,0 +1,120 @@
+[
+  {
+    "command": [
+      "D:\\PycharmProjects\\LinkRadar\\.venv\\Scripts\\python.exe",
+      "-m",
+      "parallel_bc",
+      "--help"
+    ],
+    "returncode": 0,
+    "stdout": "usage: linkradar [-h] [--data-dir DATA_DIR] [--output-dir OUTPUT_DIR]\n                 {data,centrality,validate,robustness,benchmark,demo,report}\n                 ...\n\nLinkRadar：精确介数中心性、spawn 并行与失效实验\n\npositional arguments:\n  {data,centrality,validate,robustness,benchmark,demo,report}\n    data                下载、导入、清洗或生成图\n    benchmark           有预算的性能实验\n    demo                不依赖网络的完整演示\n    report              由已有原始结果重新生成图表和中文报告\n\noptions:\n  -h, --help            show this help message and exit\n  --data-dir DATA_DIR\n  --output-dir OUTPUT_DIR\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "D:\\PycharmProjects\\LinkRadar\\.venv\\Scripts\\python.exe",
+      "-m",
+      "parallel_bc",
+      "data",
+      "generate",
+      "--family",
+      "ba",
+      "--nodes",
+      "500",
+      "--attach",
+      "3",
+      "--seed",
+      "42",
+      "--name",
+      "ba_500"
+    ],
+    "returncode": 0,
+    "stdout": "{\"n\": 500, \"m\": 1491, \"graph_sha256\": \"a79b9a5bcb61f6aba606bd76c0bd88a5fecbebf50a3483d1eb17239179e1d656\"}\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "D:\\PycharmProjects\\LinkRadar\\.venv\\Scripts\\python.exe",
+      "-m",
+      "parallel_bc",
+      "centrality",
+      "--dataset",
+      "ba_500",
+      "--mode",
+      "serial"
+    ],
+    "returncode": 0,
+    "stdout": "全起点精确中心性已保存：results\\20261023T043102_696050Z_centrality_ba_500\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "D:\\PycharmProjects\\LinkRadar\\.venv\\Scripts\\python.exe",
+      "-m",
+      "parallel_bc",
+      "centrality",
+      "--dataset",
+      "ba_500",
+      "--mode",
+      "static_batches",
+      "--processes",
+      "4",
+      "--batch-size",
+      "32"
+    ],
+    "returncode": 0,
+    "stdout": "全起点精确中心性已保存：results\\20261023T043105_871264Z_centrality_ba_500\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "D:\\PycharmProjects\\LinkRadar\\.venv\\Scripts\\python.exe",
+      "-m",
+      "parallel_bc",
+      "centrality",
+      "--dataset",
+      "ba_500",
+      "--mode",
+      "dynamic_batches",
+      "--processes",
+      "4",
+      "--batch-size",
+      "32"
+    ],
+    "returncode": 0,
+    "stdout": "全起点精确中心性已保存：results\\20261023T043109_826937Z_centrality_ba_500\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "D:\\PycharmProjects\\LinkRadar\\.venv\\Scripts\\python.exe",
+      "-m",
+      "parallel_bc",
+      "validate",
+      "--dataset",
+      "ba_500",
+      "--against",
+      "networkx"
+    ],
+    "returncode": 0,
+    "stdout": "{\n  \"allclose\": true,\n  \"finite\": true,\n  \"max_abs_error\": 1.8189894035458565e-12,\n  \"worst_node\": 34,\n  \"worst_score_kind\": \"raw\",\n  \"raw\": {\n    \"allclose\": true,\n    \"finite\": true,\n    \"max_abs_error\": 1.8189894035458565e-12,\n    \"worst_node\": 34\n  },\n  \"normalized\": {\n    \"allclose\": true,\n    \"finite\": true,\n    \"max_abs_error\": 1.3877787807814457e-17,\n    \"worst_node\": 34\n  },\n  \"atol\": 1e-10,\n  \"rtol\": 1e-09,\n  \"compared_nodes\": 500,\n  \"t_reference\": 0.8848391999999876,\n  \"t_reference_graph\": 0.0015121000001272478,\n  \"reference\": \"networkx.betweenness_centrality\",\n  \"reference_version\": \"3.7\",\n  \"k\": null,\n  \"weight\": null,\n  \"endpoints\": false\n}\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "D:\\PycharmProjects\\LinkRadar\\.venv\\Scripts\\python.exe",
+      "-m",
+      "parallel_bc",
+      "robustness",
+      "--dataset",
+      "ba_500",
+      "--random-repeats",
+      "10",
+      "--seed",
+      "42"
+    ],
+    "returncode": 0,
+    "stdout": "未提供分数缓存，先执行串行全起点计算（单独计时）。\n固定排名失效实验已保存：results\\20261023T043115_204122Z_robustness_ba_500\n",
+    "stderr": ""
+  }
+]

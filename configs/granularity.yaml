@@ -1,0 +1,23 @@
+seed: 42
+start_method: spawn
+datasets:
+  - id: sbm_200
+    generator: {family: sbm, nodes: 200, seed: 42}
+benchmark:
+  modes: [serial, static_batches, dynamic_batches]
+  processes: [2]
+  batch_sizes: [1, 8, 32, 128]
+  repeats: 3
+  warmups: 0
+  source_order: ascending
+  task_logging: false
+  max_processes: 4
+  max_case_seconds: 60
+  max_total_seconds: 300
+validation: {enabled: true, max_reference_nodes: 1000, atol: 1.0e-10, rtol: 1.0e-9}
+robustness:
+  enabled: true
+  fractions: [0, .01, .02, .05, .1, .15, .2]
+  strategies: [bc, degree, random]
+  random_repeats: 10
+output: {root: results}

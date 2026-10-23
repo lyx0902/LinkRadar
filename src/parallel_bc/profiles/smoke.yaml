@@ -1,0 +1,23 @@
+seed: 42
+start_method: spawn
+datasets:
+  - id: smoke_ba_80
+    generator: {family: ba, nodes: 80, attach: 3, seed: 42}
+benchmark:
+  modes: [serial, static_batches, dynamic_batches]
+  processes: [1, 2]
+  batch_sizes: [8]
+  repeats: 1
+  warmups: 0
+  source_order: ascending
+  task_logging: false
+  max_processes: 4
+  max_case_seconds: 30
+  max_total_seconds: 120
+validation: {enabled: true, max_reference_nodes: 1000, atol: 1.0e-10, rtol: 1.0e-9}
+robustness:
+  enabled: true
+  fractions: [0, .01, .02, .05, .1, .15, .2]
+  strategies: [bc, degree, random]
+  random_repeats: 3
+output: {root: results}

@@ -1,0 +1,29 @@
+seed: 42
+start_method: spawn
+datasets:
+  - id: er_200
+    generator: {family: er, nodes: 200, avg_degree: 6, seed: 42}
+  - id: er_500
+    generator: {family: er, nodes: 500, avg_degree: 6, seed: 42}
+  - id: ba_200
+    generator: {family: ba, nodes: 200, attach: 3, seed: 42}
+  - id: ba_500
+    generator: {family: ba, nodes: 500, attach: 3, seed: 42}
+benchmark:
+  modes: [serial, static_batches, dynamic_batches]
+  processes: [1, 2, 4]
+  batch_sizes: [32]
+  repeats: 3
+  warmups: 0
+  source_order: ascending
+  task_logging: false
+  max_processes: 4
+  max_case_seconds: 120
+  max_total_seconds: 900
+validation: {enabled: true, max_reference_nodes: 1000, atol: 1.0e-10, rtol: 1.0e-9}
+robustness:
+  enabled: true
+  fractions: [0, .01, .02, .05, .1, .15, .2]
+  strategies: [bc, degree, random]
+  random_repeats: 10
+output: {root: results}

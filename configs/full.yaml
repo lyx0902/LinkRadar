@@ -1,0 +1,25 @@
+seed: 42
+start_method: spawn
+datasets:
+  - id: pilot_er_100
+    generator: {family: er, nodes: 100, avg_degree: 6, seed: 42}
+  - {id: facebook}
+  - {id: ca_grqc}
+benchmark:
+  modes: [serial, static_batches, dynamic_batches]
+  processes: [1, 2, 4, 8]
+  batch_sizes: [32]
+  repeats: 5
+  warmups: 1
+  source_order: ascending
+  task_logging: false
+  max_processes: 8
+  max_case_seconds: 600
+  max_total_seconds: 7200
+validation: {enabled: true, max_reference_nodes: 6000, atol: 1.0e-8, rtol: 1.0e-7}
+robustness:
+  enabled: true
+  fractions: [0, .01, .02, .05, .1, .15, .2]
+  strategies: [bc, degree, random]
+  random_repeats: 20
+output: {root: results}

@@ -1,0 +1,98 @@
+{
+  "ca_grqc": {
+    "verified_graph_sha256": "c73075918cf45d64b4e4c8eeb9b550c5fa44abb63d83f111acceb02d03e68f26",
+    "n": 5242,
+    "m": 14484,
+    "metadata": {
+      "dataset_id": "ca_grqc",
+      "source": "manual_import",
+      "source_path": "D:\\PycharmProjects\\LinkRadar\\data\\raw\\ca_grqc\\CA-GrQc.txt",
+      "raw_sha256": "513efa8bb5c6d3d739797ca028d4a26a7df6bc20adcf3e722e18d1bcdb0e62d5",
+      "raw_bytes": 322719,
+      "raw_input_data_lines": 28980,
+      "skipped_invalid_lines": 0,
+      "invalid_lines": [],
+      "strict": true,
+      "nodes_path": null,
+      "nodes_sha256": null,
+      "source_url": "https://snap.stanford.edu/data/ca-GrQc.txt.gz",
+      "raw_data_lines": 28980,
+      "self_loop_lines": 12,
+      "duplicate_edge_lines": 14484,
+      "discovered_nodes": 5242,
+      "explicit_nodes": 0,
+      "final_nodes": 5242,
+      "final_edges": 14484,
+      "connected_components": 355,
+      "largest_component_nodes": 4158,
+      "average_degree": 5.526135062953071,
+      "cleaning_version": "simple-undirected-v1",
+      "node_mapping_rule": "original integer ID ascending -> contiguous index 0..n-1",
+      "graph_sha256": "c73075918cf45d64b4e4c8eeb9b550c5fa44abb63d83f111acceb02d03e68f26",
+      "source_page": "https://snap.stanford.edu/data/ca-GrQc.html",
+      "official_statistics": {
+        "nodes": 5242,
+        "edges": 14496
+      },
+      "description": "SNAP General Relativity and Quantum Cosmology author collaboration network",
+      "citation": "J. Leskovec, J. Kleinberg and C. Faloutsos. Graphs over Time: Densification Laws, Shrinking Diameters and Possible Explanations. KDD 2005.",
+      "data_use_note": "Follow official source usage terms; public download does not imply unrestricted redistribution.",
+      "cache_format": "LinkRadar-npz-v1",
+      "cache_sha256": "b47135482176c65096544e94207fb501fdd10c94e8d792e915e568ebe0ee087d"
+    },
+    "unique_self_loops": 12,
+    "self_loop_rows": 12,
+    "nonloop_multiplicities": {
+      "2": 14484
+    },
+    "unique_edges_including_loops": 14496
+  },
+  "facebook": {
+    "verified_graph_sha256": "08b9ab47b42c33de7fc51342d94771d116eca65aea905dd0fa8bf5a81fed8b83",
+    "n": 4039,
+    "m": 88234,
+    "metadata": {
+      "dataset_id": "facebook",
+      "source": "manual_import",
+      "source_path": "D:\\PycharmProjects\\LinkRadar\\data\\raw\\facebook\\facebook_combined.txt.gz",
+      "raw_sha256": "7cc432d08910b3a940ce90f7da94c13aaf048b04724eafcdf3050b28acc49daf",
+      "raw_bytes": 218575,
+      "raw_input_data_lines": 88234,
+      "skipped_invalid_lines": 0,
+      "invalid_lines": [],
+      "strict": true,
+      "nodes_path": null,
+      "nodes_sha256": null,
+      "source_url": "https://snap.stanford.edu/data/facebook_combined.txt.gz",
+      "raw_data_lines": 88234,
+      "self_loop_lines": 0,
+      "duplicate_edge_lines": 0,
+      "discovered_nodes": 4039,
+      "explicit_nodes": 0,
+      "final_nodes": 4039,
+      "final_edges": 88234,
+      "connected_components": 1,
+      "largest_component_nodes": 4039,
+      "average_degree": 43.69101262688784,
+      "cleaning_version": "simple-undirected-v1",
+      "node_mapping_rule": "original integer ID ascending -> contiguous index 0..n-1",
+      "graph_sha256": "08b9ab47b42c33de7fc51342d94771d116eca65aea905dd0fa8bf5a81fed8b83",
+      "source_page": "https://snap.stanford.edu/data/ego-Facebook.html",
+      "official_statistics": {
+        "nodes": 4039,
+        "edges": 88234
+      },
+      "description": "SNAP sampled ego-network union; not the full Facebook platform",
+      "citation": "J. McAuley and J. Leskovec. Learning to Discover Social Circles in Ego Networks. NIPS 2012.",
+      "data_use_note": "Follow official source usage terms; public download does not imply unrestricted redistribution.",
+      "cache_format": "LinkRadar-npz-v1",
+      "cache_sha256": "adba901a0dfdeb7ab8e68cd4c1c588d31223cd656d03833395c2b2d588017149"
+    },
+    "unique_self_loops": 0,
+    "self_loop_rows": 0,
+    "nonloop_multiplicities": {
+      "1": 88234
+    },
+    "unique_edges_including_loops": 88234
+  }
+}

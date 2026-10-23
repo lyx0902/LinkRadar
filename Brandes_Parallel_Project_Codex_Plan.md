@@ -306,10 +306,10 @@ ER 按目标边数随 n 线性增长，不使用固定边概率导致密度随�
 
 ## 9. 代码结构与接口
 
-建议仓库名：parallel-betweenness。
+建议仓库名：LinkRadar
 
 ~~~text
-parallel-betweenness/
+LinkRadar/
   pyproject.toml
   README.md
   configs/
@@ -338,10 +338,11 @@ parallel-betweenness/
     test_robustness.py
     test_cli.py
   docs/
-    algorithm.md
-    experiment_protocol.md
-    data_sources.md
-    report_template.md
+    README.md
+    PROJECT_GUIDE.md
+    PARALLEL_COMPUTING.md
+    RESULTS.md
+    DEMO_GUIDE.md
   data/raw/          # Git 忽略
   data/processed/    # Git 忽略
   results/          # 大文件 Git 忽略
@@ -868,5 +869,5 @@ https://docs.python.org/3/library/multiprocessing.html
 
 ## 24. 可直接交给 Codex 的执行提示
 
-> 请在当前工作区按本方案创建完整的 parallel-betweenness Python 项目。先检查已有文件与 AGENTS.md，保留用户已有工作。若是空目录则建立 src 布局、pyproject.toml、CLI、配置和测试。实现无权无向图的全起点精确 Brandes；serial、static_batches、dynamic_batches 共用同一单源内核，使用 spawn 多进程和每进程局部累加后归并。纳入 Facebook 与 ca-GrQc 下载及手工导入、确定性清洗和元数据，支持合成数据离线演示。实现正确性对照、分阶段性能计时、预算控制、固定排名节点失效实验、真实结果图表和中文报告。完成 P0 并执行 pytest 与 smoke，记录真实命令、结果及限制；有余力再做 P1。不要只写规划、伪代码或 TODO；不要杜撰性能。若真实数据下载不可用，明确说明，完成合成图全流程并保留真实数据可运行入口。交付时列出已完成项、测试结果、实际实验、运行命令、未完成项和原因。
+> 请在当前工作区按本方案创建完整的 LinkRadar Python 项目。先检查已有文件与 AGENTS.md，保留用户已有工作。若是空目录则建立 src 布局、pyproject.toml、CLI、配置和测试。实现无权无向图的全起点精确 Brandes；serial、static_batches、dynamic_batches 共用同一单源内核，使用 spawn 多进程和每进程局部累加后归并。纳入 Facebook 与 ca-GrQc 下载及手工导入、确定性清洗和元数据，支持合成数据离线演示。实现正确性对照、分阶段性能计时、预算控制、固定排名节点失效实验、真实结果图表和中文报告。完成 P0 并执行 pytest 与 smoke，记录真实命令、结果及限制；有余力再做 P1。不要只写规划、伪代码或 TODO；不要杜撰性能。若真实数据下载不可用，明确说明，完成合成图全流程并保留真实数据可运行入口。交付时列出已完成项、测试结果、实际实验、运行命令、未完成项和原因。
 

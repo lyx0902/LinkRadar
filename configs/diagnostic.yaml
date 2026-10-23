@@ -1,0 +1,19 @@
+seed: 42
+start_method: spawn
+datasets:
+  - id: sbm_200_diagnostic
+    generator: {family: sbm, nodes: 200, seed: 42}
+benchmark:
+  modes: [serial, static_batches, dynamic_batches]
+  processes: [2]
+  batch_sizes: [8]
+  repeats: 1
+  warmups: 0
+  source_order: shuffled
+  task_logging: true
+  max_processes: 4
+  max_case_seconds: 30
+  max_total_seconds: 120
+validation: {enabled: true, max_reference_nodes: 1000, atol: 1.0e-10, rtol: 1.0e-9}
+robustness: {enabled: false}
+output: {root: results}

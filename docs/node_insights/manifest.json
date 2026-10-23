@@ -1,0 +1,37 @@
+{
+  "reference_run": "results/20261023T054258_364875Z",
+  "paired_run": "results/20261023T061912_984947Z_facebook_paired",
+  "ranking": "exact full-graph raw betweenness desc; original ID asc for ties",
+  "datasets": {
+    "facebook": {
+      "graph_sha256": "08b9ab47b42c33de7fc51342d94771d116eca65aea905dd0fa8bf5a81fed8b83",
+      "top10_original_ids": [
+        107,
+        1684,
+        3437,
+        1912,
+        1085,
+        0,
+        698,
+        567,
+        58,
+        428
+      ]
+    },
+    "ca_grqc": {
+      "graph_sha256": "c73075918cf45d64b4e4c8eeb9b550c5fa44abb63d83f111acceb02d03e68f26",
+      "top10_original_ids": [
+        13801,
+        9572,
+        14599,
+        7689,
+        13929,
+        5052,
+        14485,
+        2710,
+        14265,
+        17655
+      ]
+    }
+  }
+}

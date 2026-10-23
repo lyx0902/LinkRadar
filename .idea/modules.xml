@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/LinkRadar.iml" filepath="$PROJECT_DIR$/.idea/LinkRadar.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/linkradar.iml" filepath="$PROJECT_DIR$/.idea/linkradar.iml" />
     </modules>
   </component>
 </project>

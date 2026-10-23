@@ -1,0 +1,50 @@
+{
+  "facebook": {
+    "dataset_id": "facebook",
+    "status": "failed",
+    "source_url": "https://snap.stanford.edu/data/facebook_combined.txt.gz",
+    "checked_at_utc": "2026-10-23T04:17:21.656664+00:00",
+    "attempts": [
+      {
+        "attempt": 1,
+        "error": "URLError: <urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1000)>",
+        "at_utc": "2026-10-23T04:17:18.087046+00:00"
+      },
+      {
+        "attempt": 2,
+        "error": "URLError: <urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1000)>",
+        "at_utc": "2026-10-23T04:17:19.368965+00:00"
+      },
+      {
+        "attempt": 3,
+        "error": "URLError: <urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1000)>",
+        "at_utc": "2026-10-23T04:17:21.656664+00:00"
+      }
+    ],
+    "manual_import_available": true
+  },
+  "ca_grqc": {
+    "dataset_id": "ca_grqc",
+    "status": "failed",
+    "source_url": "https://snap.stanford.edu/data/ca-GrQc.txt.gz",
+    "checked_at_utc": "2026-10-23T04:17:21.660998+00:00",
+    "attempts": [
+      {
+        "attempt": 1,
+        "error": "URLError: <urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1000)>",
+        "at_utc": "2026-10-23T04:17:18.087046+00:00"
+      },
+      {
+        "attempt": 2,
+        "error": "URLError: <urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1000)>",
+        "at_utc": "2026-10-23T04:17:19.368447+00:00"
+      },
+      {
+        "attempt": 3,
+        "error": "URLError: <urlopen error [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1000)>",
+        "at_utc": "2026-10-23T04:17:21.660998+00:00"
+      }
+    ],
+    "manual_import_available": true
+  }
+}
