@@ -128,17 +128,18 @@
 
 ```powershell
 .\.venv\Scripts\python.exe -m parallel_bc benchmark --config configs/real_quick.yaml
-.\.venv\Scripts\python.exe scripts/paired_baseline.py
+.\.venv\Scripts\python.exe -B scripts/paired_baseline.py --dataset facebook --budget 1200
+.\.venv\Scripts\python.exe -B scripts/paired_baseline.py --dataset ca_grqc --budget 600
 ```
 
-前者两图、p=1/2/4、B=128、三次重复、随机失效20次，计算预算1800秒；后者仅Facebook，固定4个可用逻辑CPU，一次全图热身与9个正式案例，默认1200秒预算。机器状态不同可能触及预算；只能报告实际完成范围。
+前者两图、p=1/2/4、B=128、三次重复、随机失效20次，计算预算1800秒；配对脚本通过--dataset分别选择Facebook或ca-GrQc，均固定4个可用逻辑CPU，一次全图热身与9个正式案例；上面命令的预算分别为1200和600秒。机器状态不同可能触及预算；只能报告实际完成范围。
 
 合成规模、粒度与时间线分别见 `configs/quick.yaml`、`configs/granularity.yaml`、`configs/diagnostic.yaml`。full必须显式启动，本项目当前没有执行其完整矩阵。
 
 ### 重新导出参数图与网页数据：不重算完整介数
 
 ```powershell
-.\.venv\Scripts\python.exe scripts/export_node_insights.py --reference-run results/20261023T054258_364875Z --paired-run results/20261023T061912_984947Z_facebook_paired
+.\.venv\Scripts\python.exe scripts/export_node_insights.py --reference-run results/20261023T054258_364875Z --paired-run results/20261023T061912_984947Z_facebook_paired --paired-run results/20261023T090440_116909Z_ca_grqc_paired
 ```
 
 会检查图指纹与分数覆盖，重生成node_insights下的自动参数附件与网页数据；当前四份主文档不会被覆盖。不要在自动附件末尾手工积累独有结论，重要解释应维护在RESULTS.md中。

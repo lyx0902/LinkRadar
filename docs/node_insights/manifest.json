@@ -1,6 +1,10 @@
 {
   "reference_run": "results/20261023T054258_364875Z",
   "paired_run": "results/20261023T061912_984947Z_facebook_paired",
+  "paired_runs": {
+    "facebook": "results/20261023T061912_984947Z_facebook_paired",
+    "ca_grqc": "results/20261023T090440_116909Z_ca_grqc_paired"
+  },
   "ranking": "exact full-graph raw betweenness desc; original ID asc for ties",
   "datasets": {
     "facebook": {

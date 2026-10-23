@@ -1,6 +1,6 @@
-"""Full Facebook adjacent-block baseline check; never changes the Brandes kernel."""
+"""Full real-graph adjacent-block baseline check; never changes the Brandes kernel."""
 from __future__ import annotations
-import argparse,csv,hashlib,json,time
+import argparse,csv,hashlib,json,sys,time
 from datetime import datetime,timezone
 from pathlib import Path
 import numpy as np
@@ -15,38 +15,42 @@ def build_schedule():
 
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--reference-run',default='results/20261023T054258_364875Z');p.add_argument('--budget',type=float,default=1200);a=p.parse_args()
-    graph=load_cached_graph('data/processed/facebook');ref=Path(a.reference_run)/'facebook'
+    p=argparse.ArgumentParser();p.add_argument('--dataset',choices=['facebook','ca_grqc'],default='facebook');p.add_argument('--reference-run',default='results/20261023T054258_364875Z');p.add_argument('--budget',type=float,default=1200);a=p.parse_args()
+    if not np.isfinite(a.budget) or a.budget<=0:p.error('--budget must be finite and positive')
+    graph=load_cached_graph(Path('data/processed')/a.dataset);ref=Path(a.reference_run)/a.dataset
     meta=json.loads((ref/'centrality_metadata.json').read_text())
     if meta['graph_sha256']!=graph.graph_sha256 or not meta['exact_all_sources']:raise ValueError('参考图或全起点标记不匹配')
     with (ref/'centrality.csv').open(encoding='utf-8',newline='') as f: nodes=sorted(csv.DictReader(f),key=lambda r:int(r['index']))
     if len(nodes)!=graph.n or any(int(r['original_id'])!=graph.ids[i] for i,r in enumerate(nodes)):raise ValueError('参考节点覆盖不匹配')
     expected=np.array([float(r['bc_raw']) for r in nodes]);expected_norm=np.array([float(r['bc_normalized']) for r in nodes])
-    run=Path('results')/(datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S_%fZ')+'_facebook_paired');run.mkdir()
+    run=Path('results')/(datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S_%fZ')+f'_{a.dataset}_paired');run.mkdir()
     proc=psutil.Process();previous=proc.cpu_affinity();affinity=previous[:4]
     if len(affinity)<4:raise ValueError('本协议需要至少4个可用逻辑CPU')
-    manifest=dict(protocol='3x3 cyclic adjacent blocks; each condition occupies each position once',dataset_id='facebook',n=graph.n,m=graph.m,graph_sha256=graph.graph_sha256,reference_run=a.reference_run,source_sha256=source_fingerprint(),script_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),logical_cpu_affinity=affinity,physical_core_mapping=None,batch_size=128,task_logging=False,budget_seconds=a.budget,started_utc=datetime.now(timezone.utc).isoformat(),status='running',cases=[])
+    manifest=dict(protocol='3x3 cyclic adjacent blocks; each condition occupies each position once',dataset_id=a.dataset,n=graph.n,m=graph.m,graph_sha256=graph.graph_sha256,reference_run=a.reference_run,source_sha256=source_fingerprint(),script_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),logical_cpu_affinity=affinity,physical_core_mapping=None,batch_size=128,task_logging=False,budget_seconds=a.budget,started_utc=datetime.now(timezone.utc).isoformat(),status='running',cases=[],command=[sys.executable,*sys.argv])
     write_json(run/'environment.json',environment());write_json(run/'manifest.json',manifest)
-    start=time.perf_counter();rows=[]
+    start=time.perf_counter();rows=[];budget_exhausted=False
     try:
         proc.cpu_affinity(affinity)
         # Full-source warmup is explicitly excluded from formal statistics.
         plan=[(-1,0,'serial',1)]+build_schedule()
         for block,position,mode,p_used in plan:
             remaining=a.budget-(time.perf_counter()-start)
-            params=dict(mode=mode,processes=p_used,max_processes=4,batch_size=128,task_logging=False,timeout_seconds=max(.01,min(300,remaining)*.95))
+            if remaining<=0:budget_exhausted=True;break
             cpu_load=psutil.cpu_percent(interval=.2);freq=psutil.cpu_freq()
+            remaining=a.budget-(time.perf_counter()-start)
+            if remaining<=0:budget_exhausted=True;break
+            params=dict(mode=mode,processes=p_used,max_processes=4,batch_size=128,task_logging=False,timeout_seconds=max(.001,min(300,remaining)*.95))
             before=time.perf_counter()
             status,result,error=bounded_call('algorithm',graph,params,min(300,remaining))
             row=dict(block=block,position=position,warmup=block<0,mode=mode,p_requested=p_used,p_used=None,status=status,error=error,cpu_load_before=cpu_load,cpu_mhz_before=freq.current if freq else None,t_supervised_wall=time.perf_counter()-before)
             if result is not None:
-                row.update(result.timings,p_used=result.p_used,active_workers=result.active_workers,max_abs_error=float(np.max(np.abs(result.raw-expected))))
+                row.update(result.timings,p_used=result.p_used,active_workers=result.active_workers,max_abs_error=float(np.max(np.abs(result.raw-expected))),max_abs_normalized_error=float(np.max(np.abs(result.normalized-expected_norm))),all_nodes_checked=graph.n)
                 if not (np.allclose(result.raw,expected,atol=1e-8,rtol=1e-7) and np.allclose(result.normalized,expected_norm,atol=1e-8,rtol=1e-7)):
                     row.update(status='failed_validation',error='全节点分数不一致')
                 write_json(run/f'workers_{block}_{position}.json',result.workers)
             rows.append(row);manifest['cases']=rows;write_csv(run/'timings_raw.csv',rows);write_json(run/'manifest.json',manifest)
             print(json.dumps(dict(run_dir=str(run),block=block,position=position,mode=mode,p=p_used,status=row['status'],t_total=row.get('t_total')),ensure_ascii=False),flush=True)
-            if status!='ok':break
+            if row['status']!='ok':break
             time.sleep(2)
     finally:
         proc.cpu_affinity(previous)
@@ -65,7 +69,7 @@ def main():
                 if r['mode']!='serial':pairs.append(dict(block=b,p_used=r['p_used'],serial_total=serial['t_total'],parallel_total=r['t_total'],observed_speedup_total=serial['t_total']/r['t_total']))
     p1=[r['observed_speedup_total'] for r in pairs if r['p_used']==1]
     comparable=len(p1)==3 and all(.8<=x<=1.25 for x in p1)
-    manifest.update(status='complete' if len(formal)==9 and all(r['status']=='ok' for r in rows) else 'partial',elapsed_seconds=time.perf_counter()-start,completed_utc=datetime.now(timezone.utc).isoformat(),baseline_comparability_screen_passed=comparable,screen_note='p=1 within-block observed ratios in [0.8,1.25]; heuristic diagnostic, not statistical significance',limitations=['Only three blocks; CPU affinity fixes 4 logical CPUs, not necessarily 4 physical cores; CPU frequency/background load not controlled.']+([] if comparable else ['Single-worker baseline comparability screen failed; do not claim a reliable multicore speedup.']))
+    manifest.update(status='complete' if len(formal)==9 and all(r['status']=='ok' for r in rows) else 'partial',elapsed_seconds=time.perf_counter()-start,completed_utc=datetime.now(timezone.utc).isoformat(),baseline_comparability_screen_passed=comparable,budget_exhausted=budget_exhausted,screen_note='p=1 within-block observed ratios in [0.8,1.25]; heuristic diagnostic, not statistical significance',limitations=['Only three blocks; CPU affinity fixes 4 logical CPUs, not necessarily 4 physical cores; CPU frequency/background load not controlled.']+([] if comparable else ['Single-worker baseline comparability screen failed; do not claim a reliable multicore speedup.']))
     write_csv(run/'timings_summary.csv',summary);write_csv(run/'paired_ratios.csv',pairs);write_json(run/'manifest.json',manifest)
     print('PAIRED_RESULT_DIR='+str(run),flush=True)
     return 0 if manifest['status']=='complete' else 2

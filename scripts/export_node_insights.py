@@ -16,13 +16,54 @@ def read_rows(p):
     with Path(p).open(encoding='utf-8-sig',newline='') as f:return list(csv.DictReader(f))
 
 
+def read_paired_evidence(directory, datasets):
+    """Reject cross-network or incomplete pairings before presenting a chart."""
+    directory=Path(directory)
+    manifest=json.loads((directory/'manifest.json').read_text(encoding='utf-8'))
+    dataset=manifest.get('dataset_id')
+    if dataset not in datasets or manifest.get('graph_sha256')!=datasets[dataset]['graph_sha256']:
+        raise ValueError('配对复测数据集或图指纹不匹配')
+    if manifest.get('status')!='complete':raise ValueError('只展示已完整完成的配对复测')
+    raw=read_rows(directory/'timings_raw.csv')
+    if len(raw)!=10 or any(r['status']!='ok' for r in raw):raise ValueError('配对复测需要一次成功热身和九个成功正式案例')
+    formal=[r for r in raw if int(r['block'])>=0]
+    if len(formal)!=9 or len([r for r in raw if int(r['block'])<0])!=1:raise ValueError('热身与正式案例数量不匹配')
+    conditions={('serial',1),('dynamic_batches',1),('dynamic_batches',4)}
+    summary=read_rows(directory/'timings_summary.csv')
+    if {(r['mode'],int(r['p_used'])) for r in summary}!=conditions or len(summary)!=3:raise ValueError('配对条件不完整')
+    for block in range(3):
+        group=[r for r in formal if int(r['block'])==block]
+        if len(group)!=3 or {int(r['position']) for r in group}!={0,1,2} or {(r['mode'],int(r['p_used'])) for r in group}!=conditions:
+            raise ValueError('每个区组必须恰好包含三个不同条件与位置')
+    for condition in conditions:
+        matching=[r for r in formal if (r['mode'],int(r['p_used']))==condition]
+        if len(matching)!=3 or {int(r['position']) for r in matching}!={0,1,2} or {int(r['block']) for r in matching}!={0,1,2}:
+            raise ValueError('配对条件的区组或位置不平衡')
+        values=np.array([float(r['t_total']) for r in matching])
+        row=next(r for r in summary if (r['mode'],int(r['p_used']))==condition)
+        if int(row['count'])!=3 or not np.isfinite(values).all():raise ValueError('配对耗时必须有三次有限实测')
+        for field,value in [('median_total',np.median(values)),('min_total',values.min()),('max_total',values.max())]:
+            if not np.isclose(float(row[field]),float(value),rtol=1e-12,atol=1e-12):raise ValueError('配对汇总与原始耗时不一致')
+    baseline=float(next(r['median_total'] for r in summary if r['mode']=='serial'))
+    for row in summary:
+        if not np.isclose(float(row['observed_speedup_total']),baseline/float(row['median_total']),rtol=1e-12,atol=1e-12):raise ValueError('加速比与同网络基线不一致')
+    p1_ratios=[]
+    for block in range(3):
+        group=[r for r in formal if int(r['block'])==block]
+        serial=float(next(r['t_total'] for r in group if r['mode']=='serial'))
+        p1=float(next(r['t_total'] for r in group if r['mode']=='dynamic_batches' and int(r['p_used'])==1))
+        p1_ratios.append(serial/p1)
+    if manifest.get('baseline_comparability_screen_passed')!=all(.8<=ratio<=1.25 for ratio in p1_ratios):raise ValueError('基线筛查标记与原始区组不一致')
+    return dataset,dict(path=directory.as_posix(),manifest=manifest,summary=summary,ratios=read_rows(directory/'paired_ratios.csv'),raw=raw)
+
+
 def export(reference_run,paired_run=None):
     base=Path(reference_run);out=Path('docs/node_insights');assets=Path('web/linkradar/dist/assets');out.mkdir(exist_ok=True,parents=True);assets.mkdir(exist_ok=True,parents=True)
     available={f.name for f in font_manager.fontManager.ttflist}
     chinese=next((f for f in ['Microsoft YaHei','SimHei','Noto Sans CJK SC'] if f in available),None)
     if chinese:plt.rcParams['font.sans-serif']=[chinese]
     plt.rcParams['axes.unicode_minus']=False
-    payload=dict(reference_run=base.as_posix(),definition='无权无向图、全起点精确Brandes、端点不计入；按raw介数降序，同分按原始整数ID升序。',datasets={},paired=None)
+    payload=dict(reference_run=base.as_posix(),definition='无权无向图、全起点精确Brandes、端点不计入；按raw介数降序，同分按原始整数ID升序。',datasets={},paired=None,paired_by_dataset={})
     reports=['# LinkRadar 关键节点与参数报告','','排名标准：全图精确介数中心性；Top10是这一指标的排序，不是适用于任何目标的统一重要性。度数衡量直接连接数，割点表示单独删除会增加连通分量数，三者含义不同。','','数据均为匿名编号，不能据此还原人物身份或评价学术贡献。','']
     for name,title in [('facebook','Facebook'),('ca_grqc','ca-GrQc')]:
         graph=load_cached_graph(Path('data/processed')/name);folder=base/name;meta=json.loads((folder/'centrality_metadata.json').read_text());validation=json.loads((folder/'validation.json').read_text())
@@ -77,27 +118,37 @@ def export(reference_run,paired_run=None):
     plt.close(fig)
     reports += ['## 首轮实验参数与证据','',f'原始结果目录：`{base.as_posix()}`。全图无权无向、endpoints=False，全部起点，raw与normalized均对照；原图全部分量与孤立点保留。', '首轮p=1/2/4，B=128，重复3次，seed=42；随机失效20次。具体原始参数以该目录config_resolved.yaml为准。首轮Facebook基线异常，网页明确保留警示。', '归一化分母=(n−1)(n−2)/2；原始介数为无序端点对的最短路径比例之和。排名按raw降序、同分按整数原始ID升序；度排名也以原始ID打破并列。', '本轮新增割点与分量大小在完整原图上求得，不使用局部示意图推断。', '']
     for file in ('robustness.png','total_time.png','speedup_total.png','speedup_steady.png'):shutil.copy2(base/'figures'/file,assets/file)
-    if paired_run:
-        paired=Path(paired_run);payload['paired']=dict(path=paired.as_posix(),manifest=json.loads((paired/'manifest.json').read_text()),summary=read_rows(paired/'timings_summary.csv'),ratios=read_rows(paired/'paired_ratios.csv'),raw=read_rows(paired/'timings_raw.csv'))
-        reports += ['## Facebook相邻区组复测','',f"复测状态：{payload['paired']['manifest']['status']}；基线可比性启发式检查：{payload['paired']['manifest']['baseline_comparability_screen_passed']}。实际逻辑CPU亲和性={payload['paired']['manifest']['logical_cpu_affinity']}，不代表相同数量的物理核心。",'','| 模式 | 实际p | 次数 | total中位数 | min–max | 观察加速比 |','|---|---|---|---|---|---|']
-        for r in payload['paired']['summary']:reports.append(f"| {r['mode']} | {r['p_used']} | {r['count']} | {float(r['median_total']):.6f} | {float(r['min_total']):.3f}–{float(r['max_total']):.3f} | {float(r['observed_speedup_total']):.3f} |")
-        reports += ['', 'p=1比值落在[0.8,1.25]仅作可比性筛查，不是显著性检验；若未通过，则四进程比值也仅作描述，不声称可靠多核加速。上一轮异常记录保留，不与本轮固定CPU亲和性的数据混合。','']
-        vals=payload['paired']['summary'];fig,ax=plt.subplots(figsize=(8,5));y=[float(r['median_total']) for r in vals];ax.bar([f"{r['mode']}\np={r['p_used']}" for r in vals],y,color=['#9aa5ad','#40978a','#255b68']);ax.set(ylabel='Total wall time (seconds)',title='Facebook: adjacent blocks, fixed 4 logical CPU affinity')
+    paired_paths=[paired_run] if isinstance(paired_run,(str,Path)) else list(paired_run or [])
+    for directory in paired_paths:
+        dataset,paired=read_paired_evidence(directory,payload['datasets'])
+        if dataset in payload['paired_by_dataset']:raise ValueError('同一网络不能混入两次配对运行')
+        payload['paired_by_dataset'][dataset]=paired
+        title=payload['datasets'][dataset]['title']
+        reports += [f'## {title}相邻区组复测','',f"复测状态：{paired['manifest']['status']}；基线可比性启发式检查：{paired['manifest']['baseline_comparability_screen_passed']}。实际逻辑CPU亲和性={paired['manifest']['logical_cpu_affinity']}，不代表相同数量的物理核心。",f"原始运行：`{paired['path']}`。",'','| 模式 | 实际p | 次数 | total中位数 | min–max | 观察加速比 |','|---|---|---|---|---|---|']
+        for r in paired['summary']:reports.append(f"| {r['mode']} | {r['p_used']} | {r['count']} | {float(r['median_total']):.6f} | {float(r['min_total']):.3f}–{float(r['max_total']):.3f} | {float(r['observed_speedup_total']):.3f} |")
+        reports += ['', 'p=1比值落在[0.8,1.25]仅作可比性筛查，不是显著性检验；若未通过，则四进程比值也仅作描述，不声称可靠多核加速。不同网络与不同协议分别统计。','']
+        vals=paired['summary'];fig,ax=plt.subplots(figsize=(8,5));y=[float(r['median_total']) for r in vals]
+        ax.bar([f"{r['mode']}\np={r['p_used']}" for r in vals],y,color=['#9aa5ad','#40978a','#255b68'])
+        ax.set(ylabel='Total wall time (seconds)',title=f'{title}: adjacent blocks, fixed 4 logical CPUs')
         for i,(v,condition) in enumerate(zip(y,vals)):
-            observations=[float(r['t_total']) for r in payload['paired']['raw'] if int(r['block'])>=0 and r['status']=='ok' and r['mode']==condition['mode'] and int(r['p_used'])==int(condition['p_used'])]
+            observations=[float(r['t_total']) for r in paired['raw'] if int(r['block'])>=0 and r['status']=='ok' and r['mode']==condition['mode'] and int(r['p_used'])==int(condition['p_used'])]
             ax.scatter(np.linspace(i-.09,i+.09,len(observations)),observations,s=30,c='#b75f36',zorder=5,label='Individual repeats' if i==0 else None)
             ax.errorbar(i,v,yerr=[[v-float(condition['min_total'])],[float(condition['max_total'])-v]],fmt='none',ecolor='#405e4f',capsize=5,zorder=4)
-            ax.text(i,max(observations)+4,f'median {v:.2f}s',ha='center',va='bottom',fontsize=9)
+            ax.text(i,max(observations)+max(y)*.03,f'median {v:.2f}s',ha='center',va='bottom',fontsize=9)
         ax.legend(fontsize=9);ax.margins(y=.16)
-        ax.set_title('Facebook: adjacent blocks, fixed 4 logical CPUs\nBars: median; dots: repeats; whiskers: min-max')
-        fig.tight_layout();fig.savefig(out/'facebook_paired.png',dpi=180);plt.close(fig);shutil.copy2(out/'facebook_paired.png',assets/'facebook_paired.png')
-    else:reports += ['## 复测状态','','Facebook相邻区组复测正在运行。旧性能比值存在单进程异常，暂不据此作可靠多核加速结论。','']
-    reports += ['## 如何理解和展示','', 'Python负责全图算法、验证和CSV导出；Web页面读取已经完成的真实结果，可筛选、排序、搜索匿名ID并查看局部连接。无需浏览器重算Brandes，也无需外网或云服务。', '当前交付为离线静态HTML/JS页面，可直接打开index.html。需要共享实时数据或提交计算任务时，再加入FastAPI等服务及任务管理；当前未部署。', '度数高不一定介数高；高介数也不保证是割点，割点按完整原图验证。排名与失效实验结论只针对当前拓扑。','']
+        ax.set_title(f'{title}: adjacent blocks, fixed 4 logical CPUs\nBars: median; dots: repeats; whiskers: min-max')
+        fig.tight_layout();fig.savefig(out/f'{dataset}_paired.png',dpi=180);plt.close(fig);shutil.copy2(out/f'{dataset}_paired.png',assets/f'{dataset}_paired.png')
+        reports += [f'![{title}配对复测]({dataset}_paired.png)','']
+    # Preserve the old Facebook entry for consumers of the first export format.
+    payload['paired']=payload['paired_by_dataset'].get('facebook')
+    for dataset in payload['datasets']:
+        if dataset not in payload['paired_by_dataset']:reports += [f"## {payload['datasets'][dataset]['title']}复测状态",'', '尚未导入该网络的完整配对结果，不用其他网络替代。','']
+    reports += ['## 如何理解和展示','', 'Python负责全图算法、验证和CSV导出；Web页面读取已经完成的真实结果，可筛选、排序、搜索匿名ID并查看局部连接。无需浏览器重算Brandes，也无需外网或云服务。', '当前交付为静态HTML/JS页面，可用本地HTTP预览或GitHub Pages工作流发布；实际线上状态以部署记录为准。若需从网页提交计算任务，再加入后端API及任务管理。', '度数高不一定介数高；高介数也不保证是割点，割点按完整原图验证。排名与失效实验结论只针对当前拓扑。','']
     (out/'report.md').write_text('\n'.join(reports),encoding='utf-8');write_json(assets/'data.json',payload)
     data_text=json.dumps(payload,ensure_ascii=False,allow_nan=False).replace('</','<\\/')
     (assets/'data.js').write_text('window.LINKRADAR_DATA = '+data_text+';\n',encoding='utf-8')
-    write_json(out/'manifest.json',dict(reference_run=base.as_posix(),paired_run=str(paired_run) if paired_run else None,ranking='exact full-graph raw betweenness desc; original ID asc for ties',datasets={k:dict(graph_sha256=v['graph_sha256'],top10_original_ids=[r['original_id'] for r in v['top10']]) for k,v in payload['datasets'].items()}))
+    write_json(out/'manifest.json',dict(reference_run=base.as_posix(),paired_run=payload['paired']['path'] if payload['paired'] else None,paired_runs={k:v['path'] for k,v in payload['paired_by_dataset'].items()},ranking='exact full-graph raw betweenness desc; original ID asc for ties',datasets={k:dict(graph_sha256=v['graph_sha256'],top10_original_ids=[r['original_id'] for r in v['top10']]) for k,v in payload['datasets'].items()}))
     print(out/'report.md')
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--reference-run',default='results/20261023T054258_364875Z');p.add_argument('--paired-run');a=p.parse_args();export(a.reference_run,a.paired_run)
+    p=argparse.ArgumentParser();p.add_argument('--reference-run',default='results/20261023T054258_364875Z');p.add_argument('--paired-run',action='append',help='可重复指定，每张真实图一个配对运行目录');a=p.parse_args();export(a.reference_run,a.paired_run)
