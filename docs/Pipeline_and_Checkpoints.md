@@ -2,7 +2,7 @@
 
 当前 YouTube 全源入口 `quotient-run`：原始边列表 → CSR 缓存 → 外围树无损分解及端点数量 → 按核心锚点分组 → Numba 边记录内核与源级线程 → 分组检查点 → 全部源组完成后恢复原图并归一化。详细算法见 [Algorithm.md](Algorithm.md)，CSR 与线程见 [CSR_and_Numba.md](CSR_and_Numba.md)，树商图和边记录见 [Graph_Optimization.md](Graph_Optimization.md)。
 
-默认 CLI 使用 `dag` 内核，新建任务采用独立检查点格式。旧 8.06% 检查点必须使用 `--kernel legacy`，不得将不同内核的分组直接混合。旧的 Python API `parallel_bc.quotient_checkpoint` 仍使用 legacy，新 API 是 `parallel_bc.quotient_checkpoint_dag`。
+默认 CLI 使用 `dag` 内核，新建任务采用双累计快照检查点。旧 8.06% 检查点必须使用 `--kernel legacy`，不得将不同内核的分组直接混合。恢复时默认根据已有清单格式选择快照或旧分组模式；旧的 Python API `parallel_bc.quotient_checkpoint` 仍使用 legacy，逐块 dag API 是 `parallel_bc.quotient_checkpoint_dag`，双快照 API 是 `parallel_bc.quotient_snapshot`。
 
 <a id="checkpoint"></a>
 
@@ -10,7 +10,19 @@
 
 此执行层复用[无损树商图](Graph_Optimization.md#tree-quotient)的带权内核，面向数小时的全源计算。2026-11-06 起，新建的 `quotient-run` 默认使用最短路径边记录内核 `--kernel dag`；旧版可用 `--kernel legacy`。历史检查点证据见[检查点实测](RESULTS.md#checkpoint-evidence)，新内核见[边记录优化](Graph_Optimization.md#dag-recording)。
 
-新旧内核使用不同的检查点格式与代码指纹。**旧任务必须用 `--kernel legacy` 恢复；不能直接将既有分组与新内核混合续算。** 旧代码及检查点指纹保留，旧的 8.06% 进度不受新任务影响。新任务使用单独目录；新旧内核都只在完整覆盖时发布全量结果。正式 CLI 默认使用新内核；直接导入 `parallel_bc.quotient_checkpoint` 的 Python API 仍是旧内核，新 API 位于 `parallel_bc.quotient_checkpoint_dag`。
+新旧内核使用不同的检查点格式与代码指纹。**旧任务必须用 `--kernel legacy` 恢复；不能直接将既有分组与新内核混合续算。** 旧代码及检查点指纹保留，旧的 8.06% 进度不受新任务影响。新任务使用单独目录；新旧内核都只在完整覆盖时发布全量结果。
+
+### 双累计快照（新任务默认）
+
+每完成一个分块，将本块核心贡献加到累计向量，交替写入 `snapshot_A.npy` / `snapshot_B.npy`。写入当前清单未引用的槽位、刷新、重新读取核对并计算哈希后，最后原子替换 `manifest.json`，更新有效槽位和源组进度。清单替换前中断时恢复上一个快照，当前块重算；清单替换后恢复新快照，不重复累加。错误退出后必须从已提交快照重新加载，不使用内存中未提交的累计值。恢复校验图、代码、依赖、CPU/线程和分块配置、源计划、进度、源数量和快照哈希；发现损坏则报错，不自动回退。
+
+格式为 `LinkRadar-quotient-dag-snapshot-v1`；累计快照仍是核心贡献，不是原图介数。清单只保留最新一次分块摘要，不长期保存逐块向量或逐源记录，因此无法再独立审计历史每一块。两个核心向量总计约 7.18 MiB，写入期间另有临时文件；完整结果数组、源计划、清单、缓存和其他文件另计。磁盘预检以两个快照、临时文件、最终结果和安全余量估算，不随全量分块数线性增长。每块仍需写一次快照；小分块会增加累计写入和 fsync 次数。
+
+`--checkpoint-mode auto`（默认）对新 `dag` 任务选快照，对新 `legacy` 任务选旧分组；续算时读取清单格式自动选择，内核和所有身份仍须匹配。可显式指定 `--checkpoint-mode snapshot` 或 `--checkpoint-mode chunks`；快照只支持 `dag`，不能直接恢复旧的分组检查点。旧检查点没有被迁移或覆盖。
+
+2026-11-06 在独立真实 YouTube 目录完成两次各32组的暂停/恢复，两个快照各3,761,440字节，累计64组与旧逐块版同源核心向量通过 `atol=1e-8, rtol=1e-10` 比较，最大绝对差9.31e-10；运行目录文件合计9,409,520字节，包含源计划和会话记录，不含外部图缓存。64组仍是部分贡献，不是全源介数；该验证也不是长期吞吐或断电持久性验证。
+
+验收：双快照专项27项和全项目364项测试通过，覆盖NetworkX小图全源对照、普通异常和真实进程退出、快照部分写入、清单提交前后恢复、哈希/源计划/计数损坏、最终输出中断、旧格式自动识别及大整数回退。原有64组4/8线程试跑和legacy 8.06%任务的清单与已提交分组文件哈希核验未变。测试入口：`python -m pytest tests/test_quotient_snapshot.py -q`。
 
 ### 数学范围
 
@@ -30,7 +42,7 @@ A_V    = E(K) + T_V
 
 YouTube 的计划有470,164个核心源组，完整恢复1,134,890个原始节点。每1024个源组提交一次，共460个检查点，最后一组数量较少。调度微批次 `--batch-size 4` 与持久化分组 `--chunk-size 1024` 是两个参数。
 
-### 提交和恢复
+### 旧逐块文件模式的提交和恢复
 
 每个检查点先写独立贡献文件，刷新并 `fsync` 后原子替换，再计算文件哈希。最后原子替换 `manifest.json`，这一步是提交点。
 
@@ -47,9 +59,11 @@ YouTube 的计划有470,164个核心源组，完整恢复1,134,890个原始节�
 
 商图只在每次会话启动时完整加载/验证一次。每个检查点内部复用现有线程调度，只保留当前组的逐源任务记录；完成后丢弃，清单保存精简的分组/worker摘要。每个worker有独占工作区和累加向量。边记录内核另预分配每线程 `4*邻接项数+8*(核心节点数+1)` 字节，YouTube 4线程约 85.24 MiB；清单分别记录 `base_workspace_bytes`、`dag_workspace_bytes` 和 `local_total_bytes`，这是数组容量而非实际峰值 RSS。全源调用不创建百万原始源的tuple/set/dict。
 
-保留不可变分组文件换取恢复的可核验性：YouTube每组核心向量约3.59 MiB，完整460组约1.61 GiB，另外保存原始节点分数和清单。启动时检查余下整个计划所需的磁盘空间。恢复需要重读已提交文件，恢复成本计入单次会话耗时。
+旧逐块模式保留不可变分组文件以便逐块核验：YouTube每组核心向量约3.59 MiB，完整460组约1.61 GiB，另外保存原始节点分数和清单。旧模式启动时检查余下整个计划所需的磁盘空间，恢复需要重读已提交文件。双快照模式的空间预检和恢复按上文处理。
 
-父进程延续原来的硬墙钟与系统可用内存监督。预算到期可能强制终止计算进程，最后一个未提交组需要重算；已提交组仍可恢复。会话结果写入独立 `session_*.json`，包括失败、超时和内存中止。每组记录执行时间、worker CPU时间、提交文件开销、组前后RSS和系统可用内存。分组RSS不是连续采样峰值；会话峰值另由监督进程记录。
+父进程延续原来的硬墙钟与系统可用内存监督。预算到期可能强制终止计算进程，最后一个未提交组需要重算；已提交组仍可恢复。会话结果写入独立 `session_*.json`，包括失败、超时和内存中止。旧逐块模式保留每组摘要；双快照模式的 `last_checkpoint` 只保留最新一块的执行时间、工作线程CPU时间、快照写入/读回/哈希时间、RSS快照和系统可用内存。RSS快照不是连续采样峰值；会话峰值另由监督进程记录。
+
+每完成并提交一块，终端输出 `checkpoint ... committed 已完成/总数 ...`；清单的 `completed_core_groups` 同步更新。计算一块期间不会逐源输出，清单的 `status=paused` 也不能单独用来判断进程是否还在运行；全部恢复并提交最终结果后才为 `complete`。
 
 ### 使用方法
 
@@ -74,4 +88,10 @@ CPU编号来自本机审计，其他机器应选择自身可用CPU。`--max-chun
 
 小图和进程故障验证：`python -m pytest tests/test_quotient_checkpoint.py -q`。两张旧真实图的全源暂停/恢复回归：`python scripts/verify_checkpoint.py`。这些验证不会启动YouTube全源计算。
 
-`python scripts/audit_checkpoint.py <run-dir>` 重查已提交文件并导出吞吐、RSS快照和外推；`python scripts/verify_youtube_checkpoint.py <run-dir>` 将首组代表的原始源恢复为源子集贡献，再与未压缩完整YouTube CSR上的同源计算逐点比较。后者有独立240秒硬预算和1 GiB内存预留，应在持续负载测试结束后执行，不将两种负载同时用于性能判断。
+`python scripts/audit_checkpoint.py <run-dir>` 和 `python scripts/verify_youtube_checkpoint.py <run-dir>` 针对旧逐块检查点，不适用于双快照格式。双快照可使用只读核验（不启动计算、不写入报告）：
+
+```powershell
+.\.venv\Scripts\python.exe -B scripts/audit_snapshot.py results/youtube_checkpoint --quotient data/processed/youtube_csr_treeq
+```
+
+该工具核对当前快照、源组计划及商图映射；`code_matches_current` 表明本机代码指纹是否与任务创建时相同，不代表已核对运行依赖和CPU亲和性。完整任务的最终文件以清单完成标记和输出哈希为准。

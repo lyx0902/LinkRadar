@@ -27,7 +27,7 @@
 | facebook | 4039 | 88234 | 1 | 4039 | 2.91038e-11 | 5.55112e-17 | 通过 |
 | ca_grqc | 5242 | 14484 | 355 | 4158 | 2.91038e-11 | 3.46945e-18 | 通过 |
 
-[原文件审计](real_data_audit.json)保存SHA、行数、自环与重复统计。全节点对照通过表示结果在声明容差内一致，不表示浮点任意精度，也不只是在检查前十名相同。
+[原文件审计](node_insights/real_data_audit.json)保存SHA、行数、自环与重复统计。全节点对照通过表示结果在声明容差内一致，不表示浮点任意精度，也不只是在检查前十名相同。
 
 ## 3. 前十关键节点及具体解释
 
@@ -127,7 +127,7 @@ Facebook的58号度数12、度排名2918，但介数排名第9；1085号介数�
 
 ![ca-GrQc配对复测：中位数、每次实测与min–max](node_insights/ca_grqc_paired.png)
 
-原始证据：[manifest](../results/20261023T090440_116909Z_ca_grqc_paired/manifest.json)、[逐次耗时](../results/20261023T090440_116909Z_ca_grqc_paired/timings_raw.csv)、[区组比值](../results/20261023T090440_116909Z_ca_grqc_paired/paired_ratios.csv)。网页任务03随当前网络切换标题、表格与图，并核对配对记录的数据集及图指纹。
+原始证据：manifest、逐次耗时、区组比值。网页任务03随当前网络切换标题、表格与图，并核对配对记录的数据集及图指纹。
 
 ### 4.5 当前性能结论的范围
 
@@ -138,8 +138,6 @@ Facebook的58号度数12、度排名2918，但介数排名第9；1085号介数�
 每个策略从原图重新开始，按原图固定介数、度数或随机排列逐步移除；不每删一个点重算排名。随机采用20个独立可复现排列，每条曲线是同一排列的嵌套前缀。主指标为剩余最大连通分量节点数 / 原始节点数，比例用floor(q*n)得到实际移除数。
 
 ca-GrQc原本有355个分量，所以起点LCC/n=4158/5242≈0.7932，而Facebook起点为1。这种初始差异不能算作节点移除造成的损失。
-
-![两个完整原图的固定排名失效曲线](../results/20261023T054258_364875Z/figures/robustness.png)
 
 | 图 | 实际移除k | 实际比例 | 介数策略LCC/n | 度数策略LCC/n | 随机均值LCC/n |
 | --- | --- | --- | --- | --- | --- |
@@ -159,14 +157,16 @@ Facebook在约20%这一点上，介数策略后的最大分量明显小于度数
 
 ## 7. 原始证据索引
 
+部分原始证据仅保存在本地的 `results/`，未随仓库发布；下表保留证据名称供查阅本地记录。
+
 | 证据 | 入口 |
 |---|---|
-| 两张真实图42案例、验证、失效、环境和配置 | [真实图manifest](../results/20261023T054258_364875Z/manifest.json) / [原始报告](../results/20261023T054258_364875Z/report.md) |
-| Facebook相邻区组复测、九个正式案例与一次热身 | [manifest](../results/20261023T061912_984947Z_facebook_paired/manifest.json)、[原始计时](../results/20261023T061912_984947Z_facebook_paired/timings_raw.csv)、[区组比值](../results/20261023T061912_984947Z_facebook_paired/paired_ratios.csv) |
-| ca-GrQc新增配对补测 | [manifest](../results/20261023T090440_116909Z_ca_grqc_paired/manifest.json) / [原始计时](../results/20261023T090440_116909Z_ca_grqc_paired/timings_raw.csv) |
-| 实际工作进程与起点分工 | [workers_0_2.json](../results/20261023T061912_984947Z_facebook_paired/workers_0_2.json) |
+| 两张真实图42案例、验证、失效、环境和配置 | 真实图manifest / 原始报告 |
+| Facebook相邻区组复测、九个正式案例与一次热身 | manifest、原始计时、区组比值 |
+| ca-GrQc新增配对补测 | manifest / 原始计时 |
+| 实际工作进程与起点分工 | workers_0_2.json |
 | 全部参数与展示附件 | [node_insights/report.md](node_insights/report.md) |
-| 原文件审计 | [real_data_audit.json](real_data_audit.json) |
+| 原文件审计 | [real_data_audit.json](node_insights/real_data_audit.json) |
 
 每条性能结论都应能回到对应CSV，不能把本篇表格当作新一轮测量。需要重新生成阶段性表格时使用[展示讲稿中的命令](Run_and_Demo.md#demo)，自动摘要放在results/summaries目录，当前主说明由人工按证据维护。
 
@@ -191,7 +191,7 @@ Facebook在约20%这一点上，介数策略后的最大分量明显小于度数
 - 图SHA256：60ed332c38411ee837d983f0b23f1245e32b914215b379075ea733161d62364c。
 - 邻接数组：31.452MiB；原始ID映射另占8.659MiB（不含运行库和临时工作区）。
 - 准备墙钟：29.520秒；准备子进程峰值RSS：467.47MiB。
-- [图元数据](../data/processed/youtube_csr/metadata.json)、[准备过程及资源记录](../data/processed/youtube_csr.preparation.json)。
+- 图元数据、准备过程及资源记录。
 
 ### 完整成功案例
 
@@ -208,9 +208,9 @@ Facebook在约20%这一点上，介数策略后的最大分量明显小于度数
 
 ### 中止与调整，全部保留
 
-1. [原Python tuple尝试](../results/20261023T115038_340597Z_youtube_pilot/report.md)：k=1在系统可用内存跌破3GiB预留线时中止，完成源数0；后续tuple尝试被停止，未声称有成功贡献向量。
-2. [CSR初次试算](../results/20261023T115252_829975Z_youtube_pilot/report.md)：k=1/4成功；k=8完成5个源后，系统可用内存约2.968GiB触发保护线，该案例未完成。
-3. [CSR的8起点重试](../results/20261023T115717_007210Z_youtube_pilot/report.md)：依据已测约303MiB峰值RSS，将这一次重试的预留线设为2GiB、硬上限240秒，实际完成8源。没有降低计算量、改变图或改变内核。
+1. 原Python tuple尝试：k=1在系统可用内存跌破3GiB预留线时中止，完成源数0；后续tuple尝试被停止，未声称有成功贡献向量。
+2. CSR初次试算：k=1/4成功；k=8完成5个源后，系统可用内存约2.968GiB触发保护线，该案例未完成。
+3. CSR的8起点重试：依据已测约303MiB峰值RSS，将这一次重试的预留线设为2GiB、硬上限240秒，实际完成8源。没有降低计算量、改变图或改变内核。
 4. 驱动器已增加资源保护：某案例触及资源线，后续更大案例自动记为resource_not_run，不再重复启动。默认预留仍为3GiB。
 
 ### 正确性与证据范围
@@ -221,7 +221,7 @@ Facebook在约20%这一点上，介数策略后的最大分量明显小于度数
 - 单源原始ID 734676可达全部1134890节点。独立全图BFS验证恒等式：sum_v delta_s(v)=sum_{t!=s,reachable}(dist(s,t)-1)。
 - 距离给出的期望总贡献：4384391；实际：4384391.000000004；绝对误差：3.725290298461914e-9。
 - 这是全图单源聚合恒等式验证，加上小图逐节点参照，不是百万节点全起点NetworkX对照。
-- [大图验证JSON](../results/20261023T115717_007210Z_youtube_pilot/large_graph_validation.json)。
+- 大图验证JSON。
 
 ### 输出与当前结论
 
@@ -232,7 +232,7 @@ Facebook在约20%这一点上，介数策略后的最大分量明显小于度数
 ### 代码与复现
 
 - [CSR模块](../src/parallel_bc/csr.py)、[受预算试算](../src/parallel_bc/large_benchmark.py)、[测试](../tests/test_csr.py)。
-- [运行说明](CSR_and_Numba.md#youtube-csr)、[计算计划](RESULTS.md#dataset-plan)。
+- [运行说明](CSR_and_Numba.md#youtube-csr)、[实验计划与后续](#experiment-plan)。
 - 原有全起点接口、旧NPZ缓存、并行调度器和失效实验未改。未提交或推送。
 
 <a id="compiled-single"></a>
@@ -251,7 +251,7 @@ Facebook在约20%这一点上，介数策略后的最大分量明显小于度数
 
 ### 独立复测结果
 
-运行目录：[`results/20261023T124824_837111Z_compiled_compare/`](../results/20261023T124824_837111Z_compiled_compare)。[机器记录](../results/20261023T124824_837111Z_compiled_compare/manifest.json)与[自动报告](../results/20261023T124824_837111Z_compiled_compare/report.md)保存全部原始指标。
+运行目录：`results/20261023T124824_837111Z_compiled_compare/`。机器记录与自动报告保存全部原始指标。
 
 三对均完成；每例8个源，每个编译源均可达全部1,134,890节点，均为nopython本机执行，未触发整数回退。代码SHA256与交付源文件重算匹配。
 
@@ -303,7 +303,7 @@ Numba预热单独记录且不计入扩展统计。每个测量案例仍包括缓
 
 ### 主实验结果
 
-原始运行：[`results/20261023T143837_298760Z_compiled_scaling/`](../results/20261023T143837_298760Z_compiled_scaling)，含[manifest.json](../results/20261023T143837_298760Z_compiled_scaling/manifest.json)、[自动报告](../results/20261023T143837_298760Z_compiled_scaling/report.md)、[交付核验](../results/20261023T143837_298760Z_compiled_scaling/delivery_validation.json)。九个测量案例均完成、验证通过；每例64个源，均遍历全部1,134,890节点，零整数回退。
+原始运行：`results/20261023T143837_298760Z_compiled_scaling/`，含manifest.json、自动报告、交付核验。九个测量案例均完成、验证通过；每例64个源，均遍历全部1,134,890节点，零整数回退。
 
 | 线程数 | 执行+归并中位数秒 | 整例墙钟中位数秒 | 配对执行加速比中位数 | 配对墙钟加速比中位数 | CPU时间并行度中位数 |
 |---|---:|---:|---:|---:|---:|
@@ -325,15 +325,13 @@ Numba预热单独记录且不计入扩展统计。每个测量案例仍包括缓
 
 整个案例子进程峰值RSS约303MiB，包含共同的图校验与导入阶段，不等于内核工作区峰值。虽每个worker新增私有数组，本次生命周期峰值没有显示明显增长；不能据此声称增线程不消耗内存。所有测量案例的系统可用内存最低约2.98GiB，未触及本轮1.5GiB预留线。
 
-![三轮耗时与实际线程重叠时间线](../results/20261023T143837_298760Z_compiled_scaling/thread_scaling.png)
-
-图左侧为三次原始值、中位数及范围；右侧为第一轮4线程案例中各源的真实开始/结束区间，不是根据请求线程数画出的示意图。可复现[作图脚本](../results/20261023T143837_298760Z_compiled_scaling/plot_scaling.py)和[SVG](../results/20261023T143837_298760Z_compiled_scaling/thread_scaling.svg)保留在原始运行目录。
+本地原始运行目录中的图，左侧为三次原始值、中位数及范围；右侧为第一轮4线程案例中各源的真实开始/结束区间，不是根据请求线程数画出的示意图。可复现作图脚本和SVG保留在原始运行目录。
 
 ### 独立源集合确认
 
 已用种子43、相同64源规模、B=4和亲和性集合进行一次额外确认。此集合独立生成，不挑选有利源点；没有并入种子42三轮主表。源顺序SHA256为 `20f51c715c39ad1e09dec00ca075ace49c8c58e2599dbf590ed671f0f1d4a67e`。
 
-原始运行：[`results/20261023T144037_545319Z_compiled_scaling/`](../results/20261023T144037_545319Z_compiled_scaling)。
+原始运行：`results/20261023T144037_545319Z_compiled_scaling/`。
 
 | 线程数 | 执行+归并秒 | 整例墙钟秒 | 相对本集合单线程执行比 |
 |---|---:|---:|---:|
@@ -384,7 +382,7 @@ Numba预热单独记录且不计入扩展统计。每个测量案例仍包括缓
 
 核心边加另存树边仍为2,987,624条；每个原始节点都有记录。重建图指纹仍为 `60ed332c38411ee837d983f0b23f1245e32b914215b379075ea733161d62364c`。
 
-派生缓存：`data/processed/youtube_csr_treeq/`。准备墙钟 **9.8839秒**，计算子进程峰值RSS约363.23MiB，CPU9.25秒；此成本单独报告，不藏在性能比较之外。证据：[准备记录](../data/processed/youtube_csr_treeq.preparation.json)。
+派生缓存：`data/processed/youtube_csr_treeq/`。准备墙钟 **9.8839秒**，计算子进程峰值RSS约363.23MiB，CPU9.25秒；此成本单独报告，不藏在性能比较之外。证据：准备记录。
 
 原CSR及原始youtube.txt保留。派生缓存多保存恢复映射，不把“计算状态压缩”误称为磁盘文件压缩。
 
@@ -394,7 +392,7 @@ Numba预热单独记录且不计入扩展统计。每个测量案例仍包括缓
 
 首次64源运行 `results/20261023T152601_017261Z_quotient_compare/` 的原版预热触及1.5GiB系统可用内存预留，受控结束；后续案例跳过，未纳入性能统计。完整状态保留，没有删除慢基线或失败记录。
 
-内存恢复后，维持相同预留线重试：[64源筛查](../results/20261023T152709_269357Z_quotient_compare)。原版与商图版使用同一64个原始源；商图实际执行63次核心遍历，代表的源仍为64。全部113万节点贡献在容差内一致，最大绝对误差2.5379e-8，零回退。
+内存恢复后，维持相同预留线重试：64源筛查。原版与商图版使用同一64个原始源；商图实际执行63次核心遍历，代表的源仍为64。全部113万节点贡献在容差内一致，最大绝对误差2.5379e-8，零回退。
 
 | 指标 | 原生CSR | 商图与恢复 |
 |---|---:|---:|
@@ -411,7 +409,7 @@ Numba预热单独记录且不计入扩展统计。每个测量案例仍包括缓
 
 原版工作时间为执行与归并；商图工作时间包括源分组、带权核心执行/归并及全原图节点恢复。整例墙钟还包括缓存读取、完整校验、JIT/缓存加载、启动、保存和回收。压缩准备的9.88秒为独立的一次性成本。
 
-最终主运行：[`results/20261023T153106_143286Z_quotient_compare/`](../results/20261023T153106_143286Z_quotient_compare)，含[机器记录](../results/20261023T153106_143286Z_quotient_compare/manifest.json)和[自动报告](../results/20261023T153106_143286Z_quotient_compare/report.md)。
+最终主运行：`results/20261023T153106_143286Z_quotient_compare/`，含机器记录和自动报告。
 
 | 重复 | 原版工作秒 | 商图分组/计算/恢复秒 | 工作加速比 | 原版整例秒 | 商图整例秒 | 整例加速比 |
 |---|---:|---:|---:|---:|---:|---:|
@@ -429,7 +427,7 @@ Numba预热单独记录且不计入扩展统计。每个测量案例仍包括缓
 
 ### 独立集合与全源预算
 
-独立种子43、256个原始源、相同4线程/B4/亲和性/1GiB预留，另运行一次：[`results/20261023T153428_506208Z_quotient_compare/`](../results/20261023T153428_506208Z_quotient_compare)。
+独立种子43、256个原始源、相同4线程/B4/亲和性/1GiB预留，另运行一次：`results/20261023T153428_506208Z_quotient_compare/`。
 
 - 原版工作16.2236秒，商图9.0423秒；整例20.8018秒与16.3054秒。
 - 工作加速1.794倍，整例1.276倍；252次核心遍历代表256源。
@@ -439,7 +437,7 @@ Numba预热单独记录且不计入扩展统计。每个测量案例仍包括缓
 
 全源预测额外采用种子44均匀抽取256个核心组，并选择这些组内**全部529个原始节点**作源，确保每个选中组的源权重与真正全源时相同。目标权重仍表示整个原图。使用相同4线程/B4/亲和性/1GiB预留。
 
-该试算的带权核心执行/归并 **7.1521秒**；以470,164个核心组外推约 **3.65小时**。证据：[投影试算JSON](../results/20261023T153612_315748Z_quotient_projection/projection.json)和[可复现脚本](../results/summaries/quotient_projection_probe.py)。这是529源的原图贡献，仍然`exact_all_sources=False`，不是全源中心性结果。
+该试算的带权核心执行/归并 **7.1521秒**；以470,164个核心组外推约 **3.65小时**。证据：投影试算JSON和可复现脚本。这是529源的原图贡献，仍然`exact_all_sources=False`，不是全源中心性结果。
 
 主表三次252组吞吐对应的全核心外推约4.1—5.9小时，中位约5.2小时；单次均匀核心组试算更快。综合只采用 **约4—6小时** 的粗估口径，不挑最快一次作承诺。源分布、内存压力、频率、长期负载、未见源点可能触发的任意精度回退及未来检查点开销均会影响最终时间。
 
@@ -566,7 +564,7 @@ YouTube同源性能输出为原始源子集的未缩放贡献，`exact_all_sourc
 
 总实验预算1800秒，每案例180秒，系统可用内存预留1 GiB。测试和旧真实图验收均在正式YouTube测量前结束。工作、核心执行和整例墙钟分开，一次性布局准备另列。三轮工程筛选不作为统计显著性检验。完整说明见[方法与运行说明](RESULTS.md#layout)。
 
-主运行目录：[20261030T072346_293822Z_layout_tuning](../results/20261030T072346_293822Z_layout_tuning)。第三轮确认在独立目录补测，原始超时保留；总体结果见[summary.json](../results/20261030T072346_293822Z_layout_tuning/summary.json)。实验过程中未修改数值/实验源码。
+主运行目录：20261030T072346_293822Z_layout_tuning。第三轮确认在独立目录补测，原始超时保留；总体结果见summary.json。实验过程中未修改数值/实验源码。
 
 ### 结论：保留原编号＋4线程
 
@@ -622,7 +620,7 @@ YouTube同源性能输出为原始源子集的未缩放贡献，`exact_all_sourc
 
 随后只补第三轮这一对，源组、布局、批次和CPU集合不变，单案上限改为300秒，并与原运行共享剩余474.466秒总预算。补测原版160.266秒、候选205.539秒均完成。
 
-补测目录：[20261030T074712_588090Z_layout_confirmation_retry](../results/20261030T074712_588090Z_layout_confirmation_retry)，记录见[continuation.json](../results/20261030T074712_588090Z_layout_confirmation_retry/continuation.json)。原运行1325.534秒＋补测366.059秒＝累计1691.593秒，约28分12秒，包含失败案例，未超过1800秒实验预算。原始失败记录仍在主目录，综合汇总类型为 `complete_with_preserved_timeout`，数值/实验代码指纹一致。
+补测目录：20261030T074712_588090Z_layout_confirmation_retry，记录见continuation.json。原运行1325.534秒＋补测366.059秒＝累计1691.593秒，约28分12秒，包含失败案例，未超过1800秒实验预算。原始失败记录仍在主目录，综合汇总类型为 `complete_with_preserved_timeout`，数值/实验代码指纹一致。
 
 ### 全量外推与旧进度成本
 
@@ -642,7 +640,7 @@ YouTube同源性能输出为原始源子集的未缩放贡献，`exact_all_sourc
 .\.venv\Scripts\python.exe scripts/summarize_layout_tuning.py results/20261030T072346_293822Z_layout_tuning --continuation results/20261030T074712_588090Z_layout_confirmation_retry
 ```
 
-最终[delivery_validation.json](../results/20261030T072346_293822Z_layout_tuning/delivery_validation.json)逐一核对21个成功案例的全部原始源数量、锚点原始ID、映射源索引、CPU集合、实际worker数量、向量形状/有限非负性和文件哈希，全部通过。进程回收核验结合创建时间排除系统复用PID，所有本轮计算进程已退出。
+最终delivery_validation.json逐一核对21个成功案例的全部原始源数量、锚点原始ID、映射源索引、CPU集合、实际worker数量、向量形状/有限非负性和文件哈希，全部通过。进程回收核验结合创建时间排除系统复用PID，所有本轮计算进程已退出。
 
 原始附件包括布局双向映射及缓存、同源计划、当前CPU拓扑、21个成功案例的全原图/旧编号核心贡献、逐源任务记录、一次超时记录和独立补测。未提交或推送Git。
 
@@ -812,7 +810,7 @@ BFS 中保留 int64 路径数溢出检查，溢出时完整重算该源的 Pytho
 数据、CSR、Numba单核与源级线程后端已实施；完成1/2/4线程三轮比较及种子43确认。历史见[CSR首轮报告](#dataset-first)、[单核报告](#compiled-single)，最新见[多核报告](#compiled-thread)。
 
 随后已完成无损树商图及全原图分数恢复，最新结果见[商图实测](#quotient-results)，公式见[方法说明](Graph_Optimization.md#tree-quotient)。
-主计划：[EXPERIMENT_PLAN.md](#experiment-plan)。
+实验计划已合并至本节的[实验计划与后续](#experiment-plan)。
 
 2026-10-24更新：分组检查点和进程恢复已实现，完整245项测试及两张旧真实图全源续算回归通过；YouTube持续负载验收见[检查点实测](#checkpoint-evidence)。
 
@@ -843,7 +841,7 @@ BFS 中保留 int64 路径数溢出检查，溢出时完整重算该源的 Pytho
 | R021 | M4 | 分组提交与故障恢复 | 全源权重固定、核心贡献检查点 | 小图故障注入、真实进程退出、Facebook/ca-GrQc全源 | 245项测试；暂停/恢复与未压缩编译版全节点一致 | MUST | DONE | 贡献文件先落盘、清单最后提交；完整覆盖后统一恢复原图 |
 | R022 | M4 | 持续负载与真实中断 | YouTube全源计划的有限会话 | 4线程、核心组1024/检查点、1GiB预留 | 1000秒硬中断后成功续算；37检查点、37888核心组 | MUST | DONE_WITH_LIMITS | 36个历史提交哈希不变；首组2289原始源与未压缩版全1134890节点一致；当前进度8.06%，非全源交付 |
 | R023 | M4 | 核心桥/割点/BCC诊断 | 迭代Tarjan只读结构分析 | 完整470164节点、2322898边核心 | 8387割点、2364桥；最大块452060节点/2295072边；278项测试 | MUST | DONE | 结构指标下降约5.43%不当作提速；完整BCC数值实现暂缓，先测重排与线程配置 |
-| R024 | M4 | BFS布局与CPU配置 | 冻结内核＋独立排列/缓存 | 主512核心组、独立2048组；4/6/8线程，三轮 | 302项测试；独立候选工作比1.04/1.55/0.78；保留一次超时 | MUST | DONE_WITH_LIMITS | 数值全部通过，但收益不稳定；保持natural/4线程与旧8.06%进度，详见LAYOUT_TUNING_RESULT.md |
+| R024 | M4 | BFS布局与CPU配置 | 冻结内核＋独立排列/缓存 | 主512核心组、独立2048组；4/6/8线程，三轮 | 302项测试；独立候选工作比1.04/1.55/0.78；保留一次超时 | MUST | DONE_WITH_LIMITS | 数值全部通过，但收益不稳定；保持natural/4线程与旧8.06%进度，详见[布局实验结果](#layout-results) |
 
 记录规范：
 - 数据列同时有 graph_sha256、n、m_unique、source_count、source_set_hash。
@@ -865,135 +863,3 @@ BFS 中保留 int64 路径数溢出检查，溢出时完整重算该源的 Pytho
 YouTube 输入来源、CSR 准备与固定源语义见 [CSR 与 Numba](CSR_and_Numba.md)，检查点及全源状态见 [当前链路](Pipeline_and_Checkpoints.md)。
 
 <a id="survey"></a>
-
-## 原始 CPU 加速方案调研（保留原文）
-
-以下是原始调研材料，并非本项目实测结论；它假设平均度约 2，YouTube 核心实际平均度约 9.88，原文中的耗时和加速幅度不能直接套用。
-
-<details>
-<summary>展开原始调研原文</summary>
-
-# 百万级图介数中心性（Betweenness Centrality）CPU 并行加速方案调研
-
-> 场景：图规模 n、m 均为百万级（n ≈ m ≈ 10⁶，平均度 ≈ 2 的极稀疏图），需遍历所有节点求精确介数，仅使用 CPU 并行（无 GPU）。
-> 调研日期：2026-10-24
-
----
-
-## 结论（TL;DR）
-
-n、m 都是百万级时，精确全节点介数（Brandes 算法，O(n(n+m)) ≈ 2×10¹² 次基本操作）**在纯 CPU 上是可行的，但不能只靠"加线程"**。效率提升来自三个层次的叠加，按收益从大到小排序：
-
-1. **图分解与剪枝**（缩小问题规模）
-2. **源点级多线程并行**
-3. **访存与数据结构优化**
-
-另外，n ≈ m ≈ 10⁶ 意味着平均度只有 ~2 的极稀疏图，这类图里分解剪枝往往是**数量级**的收益，优先做。
-
----
-
-## 0. 基线与瓶颈判断
-
-- 精确全节点介数的标准算法是 **Brandes 累积式算法**（Brandes 2001）：每个源点做一次 BFS（无权图）/ SSSP（有权图），再用依赖累积公式回溯，单源 O(n+m)，总计 O(n(n+m))。如果现在的实现还在显式枚举所有最短路径（指数级路径数），先换成 Brandes，这一步本身可能就是几个数量级的提升。
-- 百万节点规模下单源 BFS 约 5–20 ms，全量单线程约 **3–8 小时**。瓶颈**不是浮点计算而是内存随机访问**：每轮 BFS 要随机读写 dist/σ/δ 三个 O(n) 数组，cache miss 主导。这决定了后面并行和访存优化的方向。
-- 两个容易踩的坑：
-  - 无向图最后记得按有序对累加权重要 **÷ 2**；
-  - σ（最短路径条数）在百万节点图上会**溢出 32 位**，必须用 uint64 或 double——这是常见 bug。
-
----
-
-## 1. 第一杠杆：图分解与剪枝（不损失精度，收益最大）
-
-精确介数没有低于 O(nm) 的一般算法，所以最有效的手段是把"名义 10⁶ 个源点"缩到"真正需要跑全量 BFS 的少数源点"：
-
-- **双连通分量（BCC）分解**：把无向图拆成双连通分量，各分量独立跑 Brandes，割点跨分量的贡献用分量规模因子闭式补上；**桥边的贡献有闭式解 s(n−s)**（两侧分量规模之积），根本不用 BFS。对平均度 ~2 的图，绝大部分结构是树/链/桥，**真正含环、需要跑 Brandes 的"核"可能只剩几千到几万节点**，直接把小时级降到秒~分钟级。
-  - 参考：QUBE 框架、Sarıyüce et al. 的 shattering/compressing 方法、Fleuren 2018 的预处理综述（见文末文献）。
-- **有向图则做 SCC 分解**，同理。
-- 顺手清理：度 0 节点直接跳过（BC=0），自环/重边先去掉。
-- 进阶（可选）：基于上界的源点剪枝——用度、已在计算的偏序结果给节点 BC 上界，上界为 0 或很小的源点直接跳过。
-
----
-
-## 2. 第二杠杆：CPU 多线程并行（经典的两种粒度）
-
-Bader/Madduri 的系列论文是这块的标准参考（见文末文献），两种方案：
-
-### 方案 A：源点级并行（coarse-grained）——首选
-
-每个线程独立从不同源点跑完整的 BFS + 回溯，`#pragma omp parallel for schedule(dynamic)` 打在源点循环上。
-
-- 优点：线程间零同步（BFS 本身完全独立）、扩展性好到几十核、实现简单。
-- **归约避免原子操作**：每线程私有一份 BC 累积数组（n 个 double ≈ 8 MB/线程），最后一次性归并。32 核约 1.2–2 GB 总内存，完全可接受；不要用共享数组 + atomic，伪共享和原子争用会吃掉加速比。
-- **负载均衡必须用动态调度**：非连通图里不同源点的 BFS 代价差异巨大（叶子节点几乎零代价，大分量中心很贵），`schedule(static)` 会严重失衡。更讲究一点按连通分量大小降序排源点再动态分发，或直接 work-stealing。
-
-### 方案 B：层内并行（fine-grained, level-synchronous）
-
-单个 BFS 内部，每层 frontier 并行扩展、回溯阶段按层并行。
-
-- 优点：**内存只需一份** O(n) 工作数组、单源就吃满所有核。
-- 缺点：层间 barrier 多，而真实网络多是小世界（直径 ~10–20），每层并行度可能喂不满核。
-- 适合核数很多（>64）或内存受限时。
-
-### 实践推荐：混合
-
-外层开 T 个源点级任务，内存宽裕用纯方案 A；核多内存紧则 T 个源 × 每源内层并行 p/T。
-
-有权图的话层内并行要换成 **Δ-stepping**（或整数权用 Dial 桶队列），源级并行不受影响。
-
----
-
-## 3. 第三杠杆：访存与数据结构（常数因子，但常是 2–5 倍）
-
-- **CSR（压缩稀疏行）静态表示**，别用 `vector<vector<int>>` 邻接表——指针追逐是性能杀手。
-- **压缩工作数组类型**：dist 用 uint16/uint32（真实网络直径通常 < 65535），δ 用 double、σ 用 uint64。这套下来每源工作集约 20 MB，配合并行线程数正好在服务器 L3 边缘；类型压小后能显著提高 cache 命中率。
-- **回溯阶段不要存前驱表**：BFS 时只记遍历序 + 每层边界，回溯按层从深到浅扫即可，省掉 O(n+m) 的前驱内存和写流量。
-- 每线程**预分配并复用**所有缓冲区，绝不把 malloc/free 放进源点循环。
-- NUMA 机器上：线程绑核、数组 first-touch 初始化；CSR 本身才几 MB，可以直接**每个 socket 复制一份**。
-- 可选：顶点重排（RCM/按度排序）改善局部性；frontier 用双数组交替避免反复清空 visited。
-
----
-
-## 4. 降级选项：如果业务能接受近似
-
-如果下游只是做排序/取 Top-K，**pivot 采样近似**（k-BFS）带误差界（自适应采样，Riondato & Kornarocco 一系工作），k 取几百~几千即可把耗时从小时压到秒级且 Top-K 通常稳定。
-
-> 既然需求明确要"遍历所有节点"，这条只作兜底。
-
----
-
-## 5. 现成实现选型
-
-| 库 | 并行 | 评价 |
-|---|---|---|
-| [NetworKit](https://networkit.github.io/features) | C++/OpenMP，Python 接口 | **首选**：精确 Brandes + 采样近似都有，多核支持最好 |
-| [graph-tool](https://graph-tool.skewed.de/static/doc/parallel) | OpenMP（编译期可选） | 也不错，注意确认构建时开了 OpenMP |
-| igraph / Boost | 基本单线程 | 百万级精确计算会很慢 |
-| NetworkX | 无 | 纯 Python，**这个规模绝对不要用** |
-
-如果自研：C++ + OpenMP + CSR 是标准路线，GAP benchmark suite 和 Galois 框架里的 BC 实现可以参考。
-
----
-
-## 6. 建议的落地顺序
-
-1. 换/确认 Brandes 算法（无权图 BFS 版）；
-2. 做 BCC 分解 + 桥边闭式解——对均度 ~2 的图，**很可能到这一步就只剩分钟级**；
-3. 剩余的"环形核"上套源点级 OpenMP 并行（dynamic 调度 + per-thread 归约）；
-4. 还有余量再做类型压缩、复用缓冲、NUMA 这类访存优化。
-
-**预期量级**：不做分解、只做 32 核源级并行 ≈ 十几分钟到几十分钟；分解 + 并行 + 访存优化后，这类稀疏图通常能进**分钟甚至秒级**。
-
----
-
-## 参考文献
-
-- [Madduri et al. 2009 — A Faster Parallel Algorithm and Efficient Multithreaded Implementations of BC](https://www.osti.gov/servlets/purl/951102)
-- [Bader, Madduri et al. — Parallel Algorithms for Evaluating Centrality Indices in Real-World Networks (ICPP 2006)](https://davidbader.net/publication/2006-b-ma/2006-b-ma.pdf)
-- [Sarıyüce et al. — Shattering and Compressing Networks for Centrality Analysis](https://arxiv.org/html/1209.6007v1)
-- [Fleuren 2018 — Using preprocessing to speed up Brandes' betweenness centrality algorithm](https://studenttheses.uu.nl/server/api/core/bitstreams/81ad939b-b517-481f-8919-6e7da68e5ed5/content)
-- [Bonchi, De Francisci Morales, Riondato — Centrality Measures on Big Graphs（tutorial，含 QUBE 剪枝）](https://matteo.rionda.to/centrtutorial/BonchiDeFrancisciMoralesRiondato-CentralityBigGraphsTutorial-Slides.pdf)
-- [Matta et al. 2019 — Comparing Speed and Accuracy of BC Approaches](https://link.springer.com/article/10.1186/s40649-019-0062-5)
-- [NetworKit Features](https://networkit.github.io/features)
-- [graph-tool Parallel algorithms](https://graph-tool.skewed.de/static/doc/parallel)
-
-</details>

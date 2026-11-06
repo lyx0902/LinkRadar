@@ -11,7 +11,7 @@
 ### 1. 展示前只准备四样东西
 
 1. 打开[整体流程图](figures/pipeline.svg)与[并行分工图](figures/parallel_sources.svg)。
-2. 打开[Top10对照图](node_insights/top10_comparison.png)、[失效曲线](../results/20261023T054258_364875Z/figures/robustness.png)和[配对复测图](node_insights/facebook_paired.png)。
+2. 打开[Top10对照图](node_insights/top10_comparison.png)和[配对复测图](node_insights/facebook_paired.png)。
 3. 在项目根目录运行下面的本地服务器，浏览器访问 `http://127.0.0.1:8765/`。它只服务本机文件，不是外网部署；终端保持运行，结束时Ctrl+C。
 4. 备好[当前结果报告](RESULTS.md#results)和[节点CSV](node_insights/facebook_top10.csv)，网络或页面异常时仍可展示静态图与数值。
 
@@ -49,7 +49,7 @@
 
 用八起点、B=2、p=2的表说明静态固定交替分配与动态空闲领取的区别。两种模式使用相同批次和相同单源内核；动态不保证更快。
 
-然后展示[实际worker记录](../results/20261023T061912_984947Z_facebook_paired/workers_0_2.json)：四个不同PID分别处理1024、1024、967、1024个起点，合计4039。说明这些PID是当次历史运行，不是此刻仍在计算。当前保留的真实图实验没有记录逐批时间线，展示时用这份worker日志解释实际起点分工。
+然后介绍实际worker记录：四个不同PID分别处理1024、1024、967、1024个起点，合计4039。说明这些PID是当次历史运行，不是此刻仍在计算。当前保留的真实图实验没有记录逐批时间线；worker日志保存在本地原始实验目录中，可用于解释实际起点分工。
 
 #### 第5分钟：用正确性和计时说明“不是只创建几个进程”
 

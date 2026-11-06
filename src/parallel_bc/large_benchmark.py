@@ -113,13 +113,15 @@ def _job_child(conn, kind, params):
         elif kind == "layout_experiment":
             from .core_layout import layout_job
             value = layout_job(**params)
-        elif kind in {"quotient_checkpoint", "quotient_checkpoint_dag"}:
+        elif kind in {"quotient_checkpoint", "quotient_checkpoint_dag", "quotient_snapshot"}:
             options = dict(params)
             affinity = options.pop("cpu_affinity", None)
             if affinity is not None:
                 psutil.Process().cpu_affinity(affinity)
             from .tree_quotient import load_quotient
-            if kind == "quotient_checkpoint_dag":
+            if kind == "quotient_snapshot":
+                from .quotient_snapshot import checkpoint_contributions
+            elif kind == "quotient_checkpoint_dag":
                 from .quotient_checkpoint_dag import checkpoint_contributions
             else:
                 from .quotient_checkpoint import checkpoint_contributions

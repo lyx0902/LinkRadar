@@ -107,6 +107,8 @@ def parser():
     d.add_argument("--resume", action="store_true")
     d.add_argument("--kernel", choices=("dag", "legacy"), default="dag",
                    help="dag为默认边记录内核；旧检查点续算须指定legacy")
+    d.add_argument("--checkpoint-mode", choices=("auto", "snapshot", "chunks"), default="auto",
+                   help="auto新dag任务采用双快照，续算按已有格式识别；legacy使用chunks")
     d.add_argument("--threads", type=int, default=4)
     d.add_argument("--batch-size", type=int, default=4)
     d.add_argument("--chunk-size", type=int, default=1024, help="每次持久化的核心源组数量")
@@ -223,7 +225,26 @@ def dispatch(args):
         print(f"核心结构诊断：{status}；报告：{dest / 'report.md'}")
         return 0 if status == "complete" else 2
     if args.command == "quotient-run":
-        if args.kernel == "dag":
+        mode = args.checkpoint_mode
+        if mode == "auto":
+            if args.resume:
+                manifest_path = Path(args.run_dir) / "manifest.json"
+                if not manifest_path.is_file():
+                    raise ValueError("No committed checkpoint manifest to resume")
+                checkpoint_format = json.loads(manifest_path.read_text(encoding="utf-8")).get("format")
+                if checkpoint_format == "LinkRadar-quotient-dag-snapshot-v1":
+                    mode = "snapshot"
+                elif checkpoint_format in {"LinkRadar-quotient-dag-checkpoint-v1", "LinkRadar-quotient-checkpoint-v1"}:
+                    mode = "chunks"
+                else:
+                    raise ValueError("Unknown checkpoint format")
+            else:
+                mode = "snapshot" if args.kernel == "dag" else "chunks"
+        if mode == "snapshot" and args.kernel != "dag":
+            raise ValueError("Snapshot checkpoint mode requires --kernel dag")
+        if mode == "snapshot":
+            from .quotient_snapshot import run_checkpoint
+        elif args.kernel == "dag":
             from .quotient_checkpoint_dag import run_checkpoint
         else:
             from .quotient_checkpoint import run_checkpoint
