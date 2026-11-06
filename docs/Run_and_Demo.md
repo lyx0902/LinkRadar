@@ -2,6 +2,8 @@
 
 命令以项目根目录为工作目录；长任务与已有检查点的差异详见 [当前计算链路与检查点](Pipeline_and_Checkpoints.md)。
 
+2026-11-06 已完成 YouTube 全源计算，实际运行和正确性核验见[全量汇总报告](汇总报告.md)。以下演示中的 Facebook / ca-GrQc 图表和失效实验仍对应各自原有数据，不能当作 YouTube 的失效实验结果。
+
 <a id="demo"></a>
 
 ## LinkRadar 展示讲稿与操作路线
@@ -148,7 +150,7 @@
 .\.venv\Scripts\python.exe scripts/export_node_insights.py --reference-run results/20261023T054258_364875Z --paired-run results/20261023T061912_984947Z_facebook_paired --paired-run results/20261023T090440_116909Z_ca_grqc_paired
 ```
 
-会检查图指纹与分数覆盖，重生成node_insights下的自动参数附件与网页数据；八份主文档不会被覆盖。不要在自动附件末尾手工积累独有结论，重要解释应维护在RESULTS.md中。
+会检查图指纹与分数覆盖，重生成node_insights下的自动参数附件与网页数据；主文档不会被覆盖。不要在自动附件末尾手工积累独有结论，重要解释应维护在RESULTS.md中。
 
 #### 自动阶段性摘要与文档检查
 
