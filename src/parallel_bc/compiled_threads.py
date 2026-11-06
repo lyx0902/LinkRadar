@@ -15,7 +15,8 @@ from .brandes import source_order_digest
 
 
 def threaded_contributions(graph, sources, *, threads=1, batch_size=4,
-                           timeout_seconds=None, progress_path=None):
+                           timeout_seconds=None, progress_path=None,
+                           _runner_factory=None, _warmup=None):
     """One private accumulator/workspace per worker; reduce only after success.
 
     Caller must supply a verified CSRGraph. The supervisor must enforce a hard
@@ -38,7 +39,10 @@ def threaded_contributions(graph, sources, *, threads=1, batch_size=4,
         if deadline is not None and time.perf_counter() >= deadline:
             raise TimeoutError("Compiled thread source budget exceeded")
     import_started = time.perf_counter()
-    from .compiled import CompiledAccumulator, warmup
+    if _runner_factory is None:
+        from .compiled import CompiledAccumulator, warmup
+    else:
+        CompiledAccumulator, warmup = _runner_factory, _warmup
     import_seconds = time.perf_counter() - import_started
     jit = warmup()  # Compile/load before creating threads; avoid concurrent JIT.
     check_deadline()

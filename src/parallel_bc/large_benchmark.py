@@ -107,7 +107,28 @@ def _job_child(conn, kind, params):
         if kind == "prepare":
             output = prepare_csr(**params)
             value = dict(cache_directory=str(output.resolve()))
-        elif kind in {"subset", "thread_subset"}:
+        elif kind == "core_structure":
+            from .core_diagnostic import diagnose_cache
+            value = diagnose_cache(**params)
+        elif kind == "layout_experiment":
+            from .core_layout import layout_job
+            value = layout_job(**params)
+        elif kind in {"quotient_checkpoint", "quotient_checkpoint_dag"}:
+            options = dict(params)
+            affinity = options.pop("cpu_affinity", None)
+            if affinity is not None:
+                psutil.Process().cpu_affinity(affinity)
+            from .tree_quotient import load_quotient
+            if kind == "quotient_checkpoint_dag":
+                from .quotient_checkpoint_dag import checkpoint_contributions
+            else:
+                from .quotient_checkpoint import checkpoint_contributions
+            q = load_quotient(options.pop("cache_directory"))
+            loaded = time.perf_counter()
+            value = checkpoint_contributions(q, **options)
+            value.update(t_load_validate=loaded - start,
+                cpu_affinity_used=psutil.Process().cpu_affinity())
+        elif kind in {"subset", "thread_subset", "quotient_subset", "quotient_prepare"}:
             options = dict(params)
             affinity = options.pop("cpu_affinity", None)
             if affinity is not None:
@@ -124,6 +145,34 @@ def _job_child(conn, kind, params):
                 os.environ["NUMBA_CACHE_DIR"] = cache_path
             cache = options.pop("cache_directory")
             output = Path(options.pop("output"))
+            if kind == "quotient_prepare":
+                from .tree_quotient import factor_trees, save_quotient
+                graph = load_csr(cache)
+                q = factor_trees(graph)
+                save_quotient(q, output)
+                value = dict(q.metadata, cache_directory=str(output.resolve()))
+                value.update(t_child_total=time.perf_counter() - start,
+                             cpu_seconds=time.process_time() - cpu_start)
+                conn.send(("ok", value))
+                return
+            if kind == "quotient_subset":
+                from .tree_quotient import load_quotient
+                from .quotient_brandes import quotient_contributions
+                q = load_quotient(cache)
+                loaded = time.perf_counter()
+                sources = options.get("sources")
+                selected = tuple(range(q.n)) if sources is None else tuple(sources)
+                _atomic_json(output / "sources.json", dict(indices=selected,
+                    original_ids=[int(q.original_ids[i]) for i in selected],
+                    source_order_hash=source_order_digest(selected)))
+                total, value = quotient_contributions(q, **options)
+                _save_array(output / "contributions.npy", total)
+                value.update(t_load_validate=loaded - start,
+                    cpu_affinity_used=psutil.Process().cpu_affinity() if hasattr(psutil.Process(), "cpu_affinity") else None,
+                    contribution_path=str((output / "contributions.npy").resolve()),
+                    t_child_total=time.perf_counter() - start, cpu_seconds=time.process_time() - cpu_start)
+                conn.send(("ok", value))
+                return
             graph = load_csr(cache)
             loaded = time.perf_counter()
             source_file = output / "sources.json"

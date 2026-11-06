@@ -81,6 +81,62 @@ def parser():
     d.add_argument("--total-timeout", type=float, default=900)
     d.add_argument("--reserve-gib", type=float, default=2)
     d.add_argument("--cpu-affinity", type=int, nargs="+", help="限定计算子进程的逻辑CPU集合；所有线程配置用同一集合")
+    d = ds.add_parser("prepare-quotient", help="生成可恢复原图的带权外围树商图缓存")
+    _common(d)
+    d.add_argument("--dataset", required=True, help="已有CSR缓存ID")
+    d.add_argument("--timeout", type=float, default=300)
+    d.add_argument("--reserve-gib", type=float, default=2)
+    d = subs.add_parser("quotient-compare", help="同原图同源对照原生CSR与无损树商图")
+    _common(d)
+    d.add_argument("--dataset", required=True)
+    d.add_argument("--quotient", help="默认dataset后加_treeq")
+    d.add_argument("--sources", type=int, default=256)
+    d.add_argument("--threads", type=int, default=4)
+    d.add_argument("--batch-size", type=int, default=4)
+    d.add_argument("--repeats", type=int, default=3)
+    d.add_argument("--seed", type=int, default=42)
+    d.add_argument("--timeout", type=float, default=120)
+    d.add_argument("--total-timeout", type=float, default=900)
+    d.add_argument("--reserve-gib", type=float, default=2)
+    d.add_argument("--cpu-affinity", type=int, nargs="+")
+    d = subs.add_parser("quotient-run", help="分组检查点运行全源计划，可中断续算")
+    _common(d)
+    d.add_argument("--dataset", required=True, help="CSR目录名，使用其_treeq缓存")
+    d.add_argument("--quotient", help="自定义商图缓存目录名")
+    d.add_argument("--run-dir", required=True)
+    d.add_argument("--resume", action="store_true")
+    d.add_argument("--kernel", choices=("dag", "legacy"), default="dag",
+                   help="dag为默认边记录内核；旧检查点续算须指定legacy")
+    d.add_argument("--threads", type=int, default=4)
+    d.add_argument("--batch-size", type=int, default=4)
+    d.add_argument("--chunk-size", type=int, default=1024, help="每次持久化的核心源组数量")
+    d.add_argument("--seed", type=int, default=45)
+    d.add_argument("--max-chunks", type=int, help="本次最多新增组数；省略则运行至完成或预算耗尽")
+    d.add_argument("--timeout", type=float, default=1800, help="本次会话硬墙钟上限，已提交组可续算")
+    d.add_argument("--reserve-gib", type=float, default=1)
+    d.add_argument("--cpu-affinity", type=int, nargs="+")
+    d = subs.add_parser("core-diagnose", help="只读诊断商图核心的桥、割点与双连通分量")
+    _common(d)
+    d.add_argument("--dataset", required=True, help="CSR目录名，默认使用其_treeq商图")
+    d.add_argument("--quotient", help="自定义商图缓存目录名")
+    d.add_argument("--protect-run", help="另行哈希保护已有检查点目录；诊断不会修改它")
+    d.add_argument("--timeout", type=float, default=180)
+    d.add_argument("--reserve-gib", type=float, default=1)
+    d = subs.add_parser("layout-tune", help="独立比较BFS重排、线程配置与独立源集合")
+    _common(d)
+    d.add_argument("--dataset", required=True)
+    d.add_argument("--protect-run")
+    d.add_argument("--sources", type=int, default=512, help="主实验核心源组数")
+    d.add_argument("--confirm-sources", type=int, default=2048)
+    d.add_argument("--threads", type=int, nargs="+", default=[4, 6, 8])
+    d.add_argument("--repeats", type=int, default=3)
+    d.add_argument("--batch-size", type=int, default=4)
+    d.add_argument("--seed", type=int, default=46)
+    d.add_argument("--confirm-seed", type=int, default=47)
+    d.add_argument("--layout-seed", type=int, default=1234)
+    d.add_argument("--timeout", type=float, default=180)
+    d.add_argument("--total-timeout", type=float, default=1800)
+    d.add_argument("--reserve-gib", type=float, default=1)
     for name in ("centrality", "validate", "robustness"):
         d = subs.add_parser(name)
         _common(d)
@@ -144,6 +200,64 @@ def dispatch(args):
     from .data import download_dataset, import_dataset, load_cached_graph, prepare_dataset, save_graph
     from .generators import generate_graph
     from .robustness import ranking_rows
+    if args.command == "layout-tune":
+        from .layout_benchmark import run_layout_tuning
+        if not np.isfinite(args.reserve_gib) or args.reserve_gib < 0:
+            raise ValueError("reserve-gib必须非负且有限")
+        dest = run_layout_tuning(_dataset_path(args.data_dir, args.dataset + "_treeq"), args.output_dir,
+            source_count=args.sources, confirm_count=args.confirm_sources, thread_counts=args.threads,
+            repeats=args.repeats, seed=args.seed, confirm_seed=args.confirm_seed, layout_seed=args.layout_seed,
+            batch_size=args.batch_size, max_case_seconds=args.timeout, max_total_seconds=args.total_timeout,
+            min_available_bytes=int(args.reserve_gib * 2**30), protect_run=args.protect_run)
+        status = json.loads((dest / "manifest.json").read_text())["status"]
+        print(f"重排与线程实验：{status}；报告：{dest / 'report.md'}")
+        return 0 if status == "complete" else 2
+    if args.command == "core-diagnose":
+        from .core_diagnostic import run_core_diagnostic
+        if not np.isfinite(args.reserve_gib) or args.reserve_gib < 0:
+            raise ValueError("reserve-gib必须非负且有限")
+        dest = run_core_diagnostic(_dataset_path(args.data_dir, args.quotient or args.dataset + "_treeq"),
+            args.output_dir, seconds=args.timeout, min_available_bytes=int(args.reserve_gib * 2**30),
+            protect_run=args.protect_run)
+        status = json.loads((dest / "manifest.json").read_text(encoding="utf-8"))["status"]
+        print(f"核心结构诊断：{status}；报告：{dest / 'report.md'}")
+        return 0 if status == "complete" else 2
+    if args.command == "quotient-run":
+        if args.kernel == "dag":
+            from .quotient_checkpoint_dag import run_checkpoint
+        else:
+            from .quotient_checkpoint import run_checkpoint
+        if not np.isfinite(args.reserve_gib) or args.reserve_gib < 0:
+            raise ValueError("reserve-gib必须非负且有限")
+        row = run_checkpoint(_dataset_path(args.data_dir, args.quotient or args.dataset + "_treeq"),
+            args.run_dir, seconds=args.timeout, min_available_bytes=int(args.reserve_gib * 2**30),
+            cpu_affinity=args.cpu_affinity, resume=args.resume, threads=args.threads,
+            batch_size=args.batch_size, chunk_size=args.chunk_size, seed=args.seed,
+            max_chunks=args.max_chunks)
+        print(json.dumps(row, ensure_ascii=False, indent=2))
+        return 0 if row["status"] == "ok" else 2
+    if args.command == "data" and args.data_command == "prepare-quotient":
+        from .quotient_benchmark import run_quotient_preparation
+        if not np.isfinite(args.reserve_gib) or args.reserve_gib < 0:
+            raise ValueError("reserve-gib必须非负且有限")
+        row = run_quotient_preparation(_dataset_path(args.data_dir, args.dataset),
+            _dataset_path(args.data_dir, args.dataset + "_treeq"), seconds=args.timeout,
+            min_available_bytes=int(args.reserve_gib * 2**30))
+        print(json.dumps(row, ensure_ascii=False, indent=2))
+        return 0 if row["status"] == "ok" else 2
+    if args.command == "quotient-compare":
+        from .quotient_benchmark import run_quotient_comparison
+        if not np.isfinite(args.reserve_gib) or args.reserve_gib < 0:
+            raise ValueError("reserve-gib必须非负且有限")
+        dest = run_quotient_comparison(_dataset_path(args.data_dir, args.dataset),
+            _dataset_path(args.data_dir, args.quotient or args.dataset + "_treeq"), args.output_dir,
+            source_count=args.sources, threads=args.threads, batch_size=args.batch_size,
+            repeats=args.repeats, seed=args.seed, max_case_seconds=args.timeout,
+            max_total_seconds=args.total_timeout, min_available_bytes=int(args.reserve_gib * 2**30),
+            cpu_affinity=args.cpu_affinity)
+        status = json.loads((dest / "manifest.json").read_text(encoding="utf-8"))["status"]
+        print(f"无损树商图比较：{status}；报告：{dest / 'report.md'}")
+        return 0 if status == "complete" else 2
     if args.command == "compiled-scale":
         from .compiled_scaling import run_scaling
         if not np.isfinite(args.reserve_gib) or args.reserve_gib < 0:
