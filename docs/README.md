@@ -14,6 +14,8 @@
 
 `node_insights/` 是独立的自动生成展示附件，不计入上述九份文档。
 
+[as-skitter 导入与全量估算](as-skitter_导入与全量估算.md) 和 [as-skitter 加速优化调研](as-skitter_优化调研.md) 是 2026-11-10 的独立调研附录，也不计入上述九份主文档。
+
 <a id="project-guide"></a>
 
 <a id="project-guide-content"></a>

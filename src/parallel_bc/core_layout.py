@@ -21,6 +21,7 @@ from .data import _atomic_json, _sha256
 from .large_benchmark import _save_array
 from .quotient_brandes import (_restore, _selected_subtrees, _warmup_recovery,
                                WeightedAccumulator, weighted_warmup)
+from .quotient_dag_experiment import DagAccumulator, dag_warmup
 from .compiled_threads import threaded_contributions
 
 
@@ -242,8 +243,80 @@ def layout_contributions(q, layout, roots, *, threads=4, batch_size=4, timeout_s
     return total, core_total, meta
 
 
+def layout_contributions_dag(q, layout, roots, *, threads=4, batch_size=4, timeout_seconds=None):
+    """Experimental DAG-kernel twin of layout_contributions.
+
+    The default production path (quotient-run / quotient_snapshot) and the
+    existing layout-tune command keep using WeightedAccumulator. This function
+    exists only for an isolated A/B experiment: it runs the recorded-shortest-
+    path-edge kernel on a permuted core and unpermutes the result before the
+    same analytic tree restoration. It does not write checkpoints.
+    """
+    started = time.perf_counter()
+    roots = tuple(operator.index(r) for r in roots)
+    if operator.index(threads) < 1 or operator.index(batch_size) < 1:
+        raise ValueError("Positive thread and batch counts required")
+    if (len(set(roots)) != len(roots) or (roots and (min(roots) < 0 or max(roots) >= q.core.n))):
+        raise ValueError("Invalid original core source groups")
+    if not roots and q.n:
+        raise ValueError("Nonempty source groups required")
+    if timeout_seconds is not None and (not np.isfinite(timeout_seconds) or timeout_seconds <= 0):
+        raise ValueError("Positive finite timeout required")
+    recovery_jit = _warmup_recovery()
+    grouping = time.perf_counter()
+    indicator = np.isin(q.anchor_index, roots).astype(np.int8)
+    selected, root_counts, component_counts = _selected_subtrees(indicator, q.parent,
+        q.peel_order, q.anchor_nodes, q.component_index, len(q.component_sizes))
+    root_counts.flags.writeable = False
+    counts = np.ascontiguousarray(root_counts[layout.new_to_old])
+    counts.flags.writeable = False
+    traversal_roots = [r for r in roots if q.core.indptr[r+1] > q.core.indptr[r]]
+    new_roots = [int(layout.old_to_new[r]) for r in traversal_roots]
+    grouped = time.perf_counter()
+    if new_roots:
+        remaining = None if timeout_seconds is None else timeout_seconds - (grouped - started)
+        if remaining is not None and remaining <= 0:
+            raise TimeoutError("DAG layout setup exceeded budget")
+        new_total, meta = threaded_contributions(layout.graph, new_roots, threads=threads,
+            batch_size=batch_size, timeout_seconds=remaining,
+            _runner_factory=lambda graph: DagAccumulator(graph, layout.mass, counts),
+            _warmup=dag_warmup)
+    else:
+        new_total = np.zeros(q.core.n)
+        meta = dict(tasks=[], workers=[], p_used=0, active_workers=0, fallback_sources=0,
+                    t_execute_reduce=0., t_execute_wall=0., t_reduce=0., t_jit_warmup=0.)
+    before_restore = time.perf_counter()
+    core_total = new_total[layout.old_to_new]
+    total = _restore(q.parent, q.peel_order, q.anchor_nodes, q.anchor_index, q.subtree_size,
+        q.component_index, q.component_sizes, indicator, selected, root_counts, component_counts, core_total)
+    if not np.isfinite(total).all() or np.any(total < 0):
+        raise FloatingPointError("Invalid DAG layout restored original contributions")
+    ended = time.perf_counter()
+    if timeout_seconds is not None and ended - started > timeout_seconds:
+        raise TimeoutError("DAG layout recovery exceeded budget")
+    for row in meta["tasks"]:
+        new = row["source_index"]
+        old = int(layout.new_to_old[new])
+        row.update(layout_source_index=new, source_index=old, original_id=int(q.core.ids[old]))
+    if [r["source_index"] for r in meta["tasks"]] != traversal_roots:
+        raise RuntimeError("DAG layout source mapping coverage mismatch")
+    originals = np.flatnonzero(indicator)
+    meta.update(backend="layout_dag_quotient", layout=layout.metadata["kind"],
+        graph_sha256=q.source_graph_sha256, n=q.n, m=q.metadata["original_edges"],
+        source_core_graph_sha256=q.core.graph_sha256, physical_graph_sha256=layout.graph.graph_sha256,
+        root_source_order_hash=source_order_digest(roots), source_order_hash=source_order_digest(originals),
+        source_count=len(originals), represented_source_count=int(root_counts.sum()),
+        core_traversals=len(traversal_roots), restored_original_nodes=q.n, graph_full=True, scaled=False,
+        exact_all_sources=len(originals) == q.n, result_kind="ordered_all_source_contribution"
+            if len(originals) == q.n else "source_subset_contribution",
+        t_recovery_jit=recovery_jit, t_group=grouped - grouping, t_unpermute_restore=ended - before_restore,
+        t_work=grouped - grouping + meta["t_execute_reduce"] + ended - before_restore,
+        t_layout_compute_driver=ended - started)
+    return total, core_total, meta
+
+
 def layout_job(cache_directory, output, *, kind, layout_directory, seed=1234, roots=None,
-               threads=4, batch_size=4, cpu_affinity=None, timeout_seconds=None):
+               threads=4, batch_size=4, cpu_affinity=None, timeout_seconds=None, kernel="weighted"):
     import psutil
     from .tree_quotient import load_quotient
     started = time.perf_counter()
@@ -256,8 +329,14 @@ def layout_job(cache_directory, output, *, kind, layout_directory, seed=1234, ro
         return dict(layout.metadata, t_prepare_total=time.perf_counter() - started)
     layout = load_layout(q, layout_directory)
     loaded = time.perf_counter()
-    total, core_total, meta = layout_contributions(q, layout, roots, threads=threads,
-        batch_size=batch_size, timeout_seconds=timeout_seconds)
+    if kernel == "dag":
+        total, core_total, meta = layout_contributions_dag(q, layout, roots, threads=threads,
+            batch_size=batch_size, timeout_seconds=timeout_seconds)
+    elif kernel == "weighted":
+        total, core_total, meta = layout_contributions(q, layout, roots, threads=threads,
+            batch_size=batch_size, timeout_seconds=timeout_seconds)
+    else:
+        raise ValueError("kernel must be 'weighted' or 'dag'")
     output = Path(output)
     with (output / "tasks.jsonl").open("w", encoding="utf-8") as stream:
         for row in meta.pop("tasks"):

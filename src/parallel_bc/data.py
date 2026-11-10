@@ -42,14 +42,11 @@ DATASETS = {
         "official_edges": 14496,
         "citation": "J. Leskovec, J. Kleinberg and C. Faloutsos. Graphs over Time: Densification Laws, Shrinking Diameters and Possible Explanations. KDD 2005.",
     },
-    "youtube": {
-        "url": "https://snap.stanford.edu/data/bigdata/communities/com-youtube.ungraph.txt.gz",
-        "page": "https://snap.stanford.edu/data/com-Youtube.html",
-        "description": "SNAP YouTube friendship network largest connected component; not the full YouTube platform",
-        "official_nodes": 1134890,
-        "official_edges": 2987624,
-        "citation": "J. Yang and J. Leskovec. Defining and Evaluating Network Communities based on Ground-truth. ICDM 2012.",
-    },
+    # YouTube is intentionally not registered for download/prepare: the
+    # verified cache is built from a manually downloaded KONECT-format file
+    # via `data prepare-csr --format konect` (see docs/CSR_and_Numba.md), not
+    # from SNAP's com-youtube.ungraph.txt.gz. `data import --dataset youtube`
+    # remains available as the manual NPZ import path.
 }
 
 

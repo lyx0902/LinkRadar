@@ -10,7 +10,8 @@ import pytest
 pytest.importorskip("numba")
 
 from parallel_bc.brandes import finalize_scores
-from parallel_bc.core_layout import build_layout, load_layout, save_layout, validate_layout, layout_contributions
+from parallel_bc.core_layout import (build_layout, layout_contributions,
+    layout_contributions_dag, load_layout, save_layout, validate_layout)
 from parallel_bc.csr import csr_from_edges
 from parallel_bc.large_benchmark import bounded_job, subset_contributions
 from parallel_bc.layout_benchmark import run_layout_tuning, cpu_configurations
@@ -123,3 +124,23 @@ def test_current_topology_one_logical_per_physical_core():
     if audit.get("cpu_sets"):
         rows = [r for r in audit["cpu_sets"] if r["group"] == 0 and r["logical_cpu"] in configs[2]]
         assert len({r["core_index"] for r in rows}) == 2
+
+
+@pytest.mark.parametrize("kind", ["natural", "bfs"])
+def test_dag_layout_matches_weighted_layout(kind):
+    g = attached()
+    csr = csr_from_edges(g.edges(), nodes=np.arange(len(g)))
+    q = factor_trees(csr)
+    layout = build_layout(q, kind, seed=3)
+    dag_total, dag_core, dag_meta = layout_contributions_dag(q, layout, range(q.core.n),
+        threads=2, batch_size=1)
+    ref_total, ref_core, _ = layout_contributions(q, layout, range(q.core.n),
+        threads=2, batch_size=1)
+    np.testing.assert_allclose(dag_total, ref_total, atol=1e-8, rtol=1e-10)
+    np.testing.assert_allclose(dag_core, ref_core, atol=1e-8, rtol=1e-10)
+    assert dag_meta["backend"] == "layout_dag_quotient"
+    roots = [0, q.core.n - 1]
+    dag_part, _, dag_info = layout_contributions_dag(q, layout, roots, threads=2, batch_size=1)
+    ref_part, _, _ = layout_contributions(q, layout, roots, threads=2, batch_size=1)
+    np.testing.assert_allclose(dag_part, ref_part, atol=1e-8, rtol=1e-10)
+    assert [r["source_index"] for r in dag_info["tasks"]] == [r for r in roots if q.core.indptr[r+1] > q.core.indptr[r]]

@@ -9,9 +9,9 @@
 
 ## 项目概览
 
-LinkRadar 分析**无权无向图**中节点在最短路径上的中转作用。项目实现了精确的 Brandes 介数中心性算法，并提供可复现的串行与并行对比实验。本地静态报告可用于探索已有的 Facebook 和 ca-GrQc 计算结果。
+LinkRadar 分析**无权无向图**中节点在最短路径上的中转作用。项目实现了精确的 Brandes 介数中心性算法，并提供可复现的串行与并行对比实验。本地静态报告可用于探索已有的 Facebook、ca-GrQc 和 YouTube 计算结果。
 
-项目还提供独立的大图处理链路，包括 CSR 存储、可选的 Numba 编译内核、源点级线程并行、无损树商图和断点续算。YouTube 数据集已用于部分源组实验，**全量全源结果尚未完成**。
+项目还提供独立的大图处理链路，包括 CSR 存储、可选的 Numba 编译内核、源点级线程并行、无损树商图和断点续算。YouTube 的全源精确计算已于 2026-11-06 完成：470,164 个核心源组覆盖全部 1,134,890 个原始源点，两次会话监督墙钟合计约 2 小时 30 分 37 秒；核验范围与限制见[全量汇总报告](docs/汇总报告.md)。
 
 ## 功能特性
 
@@ -41,7 +41,7 @@ python -m parallel_bc demo --profile smoke
 
 ### 查看现有报告
 
-访问 [LinkRadar 在线报告](https://lyx0902.github.io/LinkRadar/)，探索已有的 Facebook 和 ca-GrQc 结果。该静态报告不会在打开时重新运行算法，也不会自动导入新的 YouTube 结果。详见 [Web 使用说明](web/linkradar/README.md)。
+访问 [LinkRadar 在线报告](https://lyx0902.github.io/LinkRadar/)，探索已有的 Facebook、ca-GrQc 与 YouTube 全源结果。该静态报告不会在打开时重新运行算法，也不会自动导入新的计算结果；YouTube 资源由 `scripts/export_youtube_web.py` 从已核验的全源运行中手工导出。详见 [Web 使用说明](web/linkradar/README.md)。
 
 ### 运行有限规模的 YouTube 实验
 
@@ -89,7 +89,7 @@ flowchart LR
 | 2 | 5.873 | 4.091 | 1.436× |
 | 3 | 5.375 | 4.074 | 1.319× |
 
-三轮配对加速比的中位数为 **1.436×**。恢复后的全部 1,134,890 个原图节点的部分贡献，在文档记录的容差范围内与基线一致。这是小样本内核对比，不能作为端到端或全图加速保证；实验没有控制机器负载和 CPU 频率。实验方法与限制详见[边记录实验](docs/Graph_Optimization.md#dag-recording)、[实验结果](docs/RESULTS.md)和[全量耗时估算](docs/提速历程与全量耗时估算.md)。
+三轮配对加速比的中位数为 **1.436×**。恢复后的全部 1,134,890 个原图节点的部分贡献，在文档记录的容差范围内与基线一致。这是小样本内核对比，不能作为端到端或全图加速保证；实验没有控制机器负载和 CPU 频率。实验方法与限制详见[边记录实验](docs/Graph_Optimization.md#dag-recording)、[实验结果](docs/RESULTS.md)和[全量耗时估算](docs/提速历程与全量耗时估算.md)。全源任务的实际分块、两次会话墙钟和核验范围见[YouTube 全量汇总报告](docs/汇总报告.md)；上表只比较同一批 64 个核心源组的边记录内核，不是全源性能对照。
 
 ## 详细文档
 
@@ -102,4 +102,5 @@ flowchart LR
 | [处理链路与检查点](docs/Pipeline_and_Checkpoints.md) | 运行、输出、恢复与兼容性 |
 | [运行与演示](docs/Run_and_Demo.md) | 命令与展示流程 |
 | [实验结果](docs/RESULTS.md) | 实验、验证与限制 |
+| [YouTube 全量汇总报告](docs/汇总报告.md) | 全源结果、两次会话、正确性核验与限制 |
 | [全量耗时估算](docs/提速历程与全量耗时估算.md) | 提速历程与有限条件下的外推 |
