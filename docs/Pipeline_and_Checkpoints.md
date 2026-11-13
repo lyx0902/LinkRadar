@@ -2,7 +2,7 @@
 
 当前 YouTube 全源入口 `quotient-run`：原始边列表 → CSR 缓存 → 外围树无损分解及端点数量 → 按核心锚点分组 → Numba 边记录内核与源级线程 → 分组检查点 → 全部源组完成后恢复原图并归一化。详细算法见 [Algorithm.md](Algorithm.md)，CSR 与线程见 [CSR_and_Numba.md](CSR_and_Numba.md)，树商图和边记录见 [Graph_Optimization.md](Graph_Optimization.md)。
 
-2026-11-06 的新建 8 线程双快照任务已完成全源：每块 2,048 核心源组，累计 230 块；第一次因系统可用内存低于 1 GiB 预留线中止，第二次续算完成，两次监督墙钟合计 9,037.049 秒，不含中间停顿。全源覆盖和文件哈希通过核验；外围节点结构公式全部一致，核心节点未做另一套算法的全图逐点对照。数据和验证边界见[全量汇总报告](汇总报告.md)。
+2026-11-06 的新建 8 线程双快照任务已完成全源：每块 2,048 核心源组，累计 230 块；第一次因系统可用内存低于 1 GiB 预留线中止，第二次续算完成，两次监督墙钟合计 9,037.049 秒，不含中间停顿。全源覆盖和文件哈希通过核验；外围节点结构公式全部一致，核心节点未做另一套算法的全图逐点对照。数据和验证边界见[全量汇总报告](Youtube全量处理报告.md)。
 
 默认 CLI 使用 `dag` 内核，新建任务采用双累计快照检查点。旧 8.06% 检查点必须使用 `--kernel legacy`，不得将不同内核的分组直接混合。恢复时默认根据已有清单格式选择快照或旧分组模式；旧的 Python API `parallel_bc.quotient_checkpoint` 仍使用 legacy，逐块 dag API 是 `parallel_bc.quotient_checkpoint_dag`，双快照 API 是 `parallel_bc.quotient_snapshot`。
 
