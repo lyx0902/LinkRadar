@@ -7,13 +7,12 @@
 3. [CSR 与 Numba](CSR_and_Numba.md)：数组、编译与并行线程。
 4. [树商图与边记录](Graph_Optimization.md)：两项图计算优化。
 5. [当前链路与检查点](Pipeline_and_Checkpoints.md)：主链路、恢复和旧任务兼容。
-6. [运行与展示](Run_and_Demo.md)：命令、展示与课堂问答。
-7. [实验与结果](RESULTS.md)：性能、数据和结构发现。
-8. [提速历程与全量耗时估算](Youtube提速历程.md)：每一阶段的时间变化。
-9. [YouTube 全量汇总报告](Youtube全量处理报告.md)：本次全源结果、耗时和正确性核验。
-10. [as-skitter 全量处理报告](as-skitter全量处理报告.md)：全源结果、会话记录、正确性核验和优化实验。
+6. [实验与结果](RESULTS.md)：性能、数据和结构发现。
+7. [提速历程与全量耗时估算](Youtube提速历程.md)：每一阶段的时间变化。
+8. [YouTube 全量汇总报告](Youtube全量处理报告.md)：本次全源结果、耗时和正确性核验。
+9. [as-skitter 全量处理报告](as-skitter全量处理报告.md)：全源结果、会话记录、正确性核验和优化实验。
 
-`node_insights/` 是独立的自动生成展示附件，不计入上述十份主文档。
+`node_insights/` 是独立的自动生成展示附件，不计入上述九份主文档。
 
 <a id="project-guide"></a>
 

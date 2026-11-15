@@ -195,7 +195,7 @@ YouTube 的固定排名失效数据已导出到网页，具体数据见 [YouTube
 | YouTube 固定排名失效数据 | [youtube_robustness.csv](../web/linkradar/dist/assets/youtube_robustness.csv) |
 | as-skitter 失效实验与小分量验证 | [曲线](figures/as_skitter_robustness.png)、[汇总 CSV](figures/as_skitter_robustness_summary.csv)、[详细报告](as-skitter全量处理报告.md#8-节点移除实验与小连通分量验证)；本地 `results/as_skitter_robustness_20261115T153130/` |
 
-每条性能结论都应能回到对应的原始计时、会话 JSON 或 CSV，不能把本篇表格当作新一轮测量。需要重新生成阶段性表格时使用[展示讲稿中的命令](Run_and_Demo.md#demo)，自动摘要放在results/summaries目录，当前主说明由人工按证据维护。
+每条性能结论都应能回到对应的原始计时、会话 JSON 或 CSV，不能把本篇表格当作新一轮测量。自动摘要放在 `results/summaries` 目录，当前主说明由人工按证据维护。
 
 
 <a id="experiment-plan"></a>

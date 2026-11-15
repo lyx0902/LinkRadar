@@ -76,6 +76,38 @@ python -m parallel_bc demo --profile smoke
 
 访问 [LinkRadar 在线报告](https://lyx0902.github.io/LinkRadar/)可探索已部署的结果；本地页面现已接入 as-skitter，线上需提交并部署更新。该静态报告不会在打开时重新运行算法，也不会自动导入新的计算结果；YouTube 与 as-skitter 的资源分别由导出脚本生成。详见 [Web 使用说明](web/linkradar/README.md)。
 
+### 数据处理命令
+
+以下 PowerShell 命令使用两次全量任务记录的内核、线程数、批次、分块、种子和 CPU 亲和性。运行前需要安装 `compiled` 可选依赖，并分别准备好 CSR 与树商图缓存：`data/processed/youtube_csr_treeq/` 和 `data/processed/as-skitter_csr_treeq/`。YouTube 缓存准备方法见下方的有限规模示例，as-skitter 数据说明见[全量处理报告](docs/as-skitter全量处理报告.md)。
+
+#### YouTube 全量计算
+
+```powershell
+python -m parallel_bc quotient-run `
+  --dataset youtube_csr `
+  --run-dir results/youtube_full_8t_2048_new `
+  --kernel dag --checkpoint-mode snapshot `
+  --threads 8 --batch-size 4 --chunk-size 2048 --seed 45 `
+  --timeout 28800 --reserve-gib 1 `
+  --cpu-affinity 0 2 4 6 8 9 10 11
+```
+
+#### as-skitter 全量计算
+
+```powershell
+python -m parallel_bc quotient-run `
+  --dataset as-skitter_csr `
+  --run-dir results/as_skitter_full_12t_2048_new `
+  --kernel dag --checkpoint-mode snapshot `
+  --threads 12 --batch-size 4 --chunk-size 2048 --seed 45 `
+  --timeout 28800 --reserve-gib 1 `
+  --cpu-affinity 0 2 4 6 8 9 10 11 12 13 14 15
+```
+
+示例结果目录须不存在；需要重新运行时可改用其他新目录。CPU 编号是当时机器的配置，其他机器应按实际可用逻辑 CPU 调整。`--timeout 28800` 为示例设置的单次会话 8 小时上限，并非全量耗时承诺；任务可能需要多次会话。
+
+中断或会话超时后，将原命令中的同一运行目录保留，并添加 `--resume` 继续；数据集、内核、线程数、批次、分块、种子及 CPU 亲和性须与原任务一致。终端每提交一块会显示已完成源组数，完整结果在全部源组及原图恢复完成后生成。续算和结果文件说明见[检查点与恢复说明](docs/Pipeline_and_Checkpoints.md)。
+
 ### 运行有限规模的 YouTube 实验
 
 单独下载并解压 [YouTube 数据集压缩包](https://github.com/dange-academic/real_network_datasets/blob/main/PRE2020/youtube.zip)，将其中 KONECT 格式的 `youtube.txt` 放在 `data/raw/youtube/youtube.txt`，并查看上游来源的数据使用条款。数据集和生成的缓存不包含在 Git 仓库中。安装 `compiled` 可选依赖后，可按以下步骤准备缓存，并运行一个包含 64 个核心源组的分块：
@@ -105,7 +137,6 @@ python -m pytest -q
 | [CSR 与 Numba](docs/CSR_and_Numba.md) | 数据表示、编译与并行处理 |
 | [图结构优化](docs/Graph_Optimization.md) | 树商图、结果恢复与边记录 |
 | [处理链路与检查点](docs/Pipeline_and_Checkpoints.md) | 运行、输出、恢复与兼容性 |
-| [运行与演示](docs/Run_and_Demo.md) | 命令与展示流程 |
 | [实验结果](docs/RESULTS.md) | 实验、验证与限制 |
 | [YouTube 全量汇总报告](docs/Youtube全量处理报告.md) | 全源结果、两次会话、正确性核验与限制 |
 | [as-skitter 全量处理报告](docs/as-skitter全量处理报告.md) | 全源结果、会话记录、正确性核验与优化实验 |
