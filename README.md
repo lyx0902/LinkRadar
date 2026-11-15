@@ -102,26 +102,6 @@ python -m parallel_bc quotient-run `
 
 中断或会话超时后，将原命令中的同一运行目录保留，并添加 `--resume` 继续；数据集、内核、线程数、批次、分块、种子及 CPU 亲和性须与原任务一致。终端每提交一块会显示已完成源组数，完整结果在全部源组及原图恢复完成后生成。续算和结果文件说明见[检查点与恢复说明](docs/Pipeline_and_Checkpoints.md)。
 
-### 运行有限规模的 YouTube 实验
-
-单独下载并解压 [YouTube 数据集压缩包](https://github.com/dange-academic/real_network_datasets/blob/main/PRE2020/youtube.zip)，将其中 KONECT 格式的 `youtube.txt` 放在 `data/raw/youtube/youtube.txt`，并查看上游来源的数据使用条款。数据集和生成的缓存不包含在 Git 仓库中。安装 `compiled` 可选依赖后，可按以下步骤准备缓存，并运行一个包含 64 个核心源组的分块：
-
-```powershell
-python -m parallel_bc data prepare-csr --dataset youtube --path data/raw/youtube/youtube.txt --format konect
-python -m parallel_bc data prepare-quotient --dataset youtube_csr
-python -m parallel_bc quotient-run --dataset youtube_csr --run-dir results/youtube_example --threads 4 --batch-size 4 --chunk-size 64 --seed 45 --max-chunks 1 --timeout 1800 --reserve-gib 1
-```
-
-请使用新的运行目录，并为预处理和线程工作区预留足够内存。每提交一个分块，终端会输出 `committed <completed>/<total> core groups`；分块计算期间不会逐源输出进度。这个示例只计算**部分源组**，不是全源结果。
-
-如需继续同一任务，重复执行 `quotient-run` 命令并添加 `--resume`，同时保持数据集、内核、线程数、批次大小、分块大小、种子和 CPU 亲和性设置一致。去掉 `--max-chunks 1` 后，任务会继续运行至完成或本次会话超时；超时限制针对单次会话。可通过 `manifest.json` 查看进度和 `exact_all_sources` 状态。只有全部源组计算及最终恢复完成后，才会发布 `bc_raw.npy` 和 `bc_normalized.npy`；节点顺序与商图缓存中的 `original_ids.npy` 一致。启动长任务前，特别是在恢复旧版内核检查点时，请先阅读[检查点与恢复说明](docs/Pipeline_and_Checkpoints.md)。
-
-```powershell
-python -m parallel_bc --help
-python -m parallel_bc quotient-run --help
-python -m pytest -q
-```
-
 ## 详细文档
 
 | 文档 | 内容 |
