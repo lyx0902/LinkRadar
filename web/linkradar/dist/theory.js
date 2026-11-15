@@ -117,7 +117,7 @@
     const item = window.LINKRADAR_DATA.datasets[byId('dataset').value], first = item.top10[0];
     const denominator = (item.n - 1) * (item.n - 2) / 2;
     const number = value => Number(value).toLocaleString('zh-CN', { maximumFractionDigits: 6 });
-    byId('theory-current-score').textContent = '当前' + item.title + '：n=' + number(item.n) + '，m=' + number(item.m) + '，平均度2m/n=' + number(2 * item.m / item.n) + '。介数第一的原始ID为' + first.original_id + '；raw=' + number(first.bc_raw) + '，归一化分母=' + number(denominator) + '，normalized=' + Number(first.bc_normalized).toFixed(9) + '。切换上方网络即可对照另一张图。';
+    byId('theory-current-score').textContent = '当前' + item.title + '：n=' + number(item.n) + '，m=' + number(item.m) + '，平均度2m/n=' + number(2 * item.m / item.n) + '。介数第一的原始ID为' + first.original_id + '；raw=' + number(first.bc_raw) + '，归一化分母=' + number(denominator) + '，normalized=' + Number(first.bc_normalized).toFixed(9) + '。可在关键节点或实验信息页切换网络，再回到这里对照。';
     byId('theory-lcc-current').textContent = '当前' + item.title + '原图有' + number(item.components) + '个连通分量，最大分量' + number(item.lcc_size) + '个节点。因此零删除起点LCC/n=' + item.lcc_size + '/' + item.n + '=' + (item.lcc_size / item.n).toFixed(6) + '。' + (item.components > 1 ? '它原本就不完全连通，起点小于1不是删除造成的损失。' : '它原本完全连通，所以起点为1。');
   }
   function filterGlossary() {

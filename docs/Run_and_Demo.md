@@ -2,7 +2,7 @@
 
 命令以项目根目录为工作目录；长任务与已有检查点的差异详见 [当前计算链路与检查点](Pipeline_and_Checkpoints.md)。
 
-YouTube 与 as-skitter 均已完成全源计算，运行和核验分别见 [YouTube 全量报告](Youtube全量处理报告.md)和 [as-skitter 全量报告](as-skitter全量处理报告.md)。现有网页展示 Facebook、ca-GrQc 和 YouTube 的节点筛选与固定排名失效结果；as-skitter 尚未接入网页。以下 Facebook / ca-GrQc 的图表与数字仍对应各自原有数据，不与其他图混用。
+YouTube 与 as-skitter 均已完成全源计算，运行和核验分别见 [YouTube 全量报告](Youtube全量处理报告.md)和 [as-skitter 全量报告](as-skitter全量处理报告.md)。本地网页展示四张图的节点筛选与固定排名失效结果；as-skitter 的线上版本需部署更新后生效。以下 Facebook / ca-GrQc 的图表与数字仍对应各自原有数据，不与其他图混用。
 
 <a id="demo"></a>
 
@@ -75,7 +75,7 @@ YouTube 与 as-skitter 均已完成全源计算，运行和核验分别见 [YouT
 4. 切换ca-GrQc，确认5242节点、14484边、355个分量，排名首位为原始ID13801。
 5. 选一个局部图节点看参数，说明局部图仅截取最多120个节点辅助解释，分数仍在完整原图计算。布局远近没有现实距离含义。
 
-还可切换 YouTube，展示其全量节点筛选和已导出的失效曲线。as-skitter 的全源排名与运行记录见[全量报告](as-skitter全量处理报告.md)，目前不能在该网页切换展示。
+还可切换 YouTube 或 as-skitter，展示对应的全量节点筛选和已导出的失效曲线。as-skitter 的全源排名与运行记录见[全量报告](as-skitter全量处理报告.md)；线上页面需部署后才包含本地新增结果。
 
 如果想示范参数可复核，可用原始ID搜索、切换到度排名、展示全部节点分页，再下载CSV。无需把全部功能都点一遍。
 

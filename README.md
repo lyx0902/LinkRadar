@@ -9,7 +9,7 @@
 
 ## 项目概览
 
-LinkRadar 分析**无权无向图**中节点在最短路径上的中转作用。项目实现了精确的 Brandes 介数中心性算法，并提供可复现的串行与并行对比实验。本地静态报告可用于探索已有的 Facebook、ca-GrQc 和 YouTube 计算结果。
+LinkRadar 分析**无权无向图**中节点在最短路径上的中转作用。项目实现了精确的 Brandes 介数中心性算法，并提供可复现的串行与并行对比实验。本地静态报告可用于探索已有的 Facebook、ca-GrQc、YouTube 和 as-skitter 计算结果。
 
 项目还提供独立的大图处理链路，包括 CSR 存储、可选的 Numba 编译内核、源点级线程并行、无损树商图和断点续算。YouTube 与 as-skitter 均已完成全源计算及原图节点结果恢复，配置、耗时及核验范围见两份[全量处理报告](#详细文档)。
 
@@ -74,7 +74,7 @@ python -m parallel_bc demo --profile smoke
 
 ### 查看现有报告
 
-访问 [LinkRadar 在线报告](https://lyx0902.github.io/LinkRadar/)，探索已有的 Facebook、ca-GrQc 与 YouTube 全源结果；as-skitter 暂未接入该页面。该静态报告不会在打开时重新运行算法，也不会自动导入新的计算结果；YouTube 资源由 `scripts/export_youtube_web.py` 从已核验的全源运行中手工导出。详见 [Web 使用说明](web/linkradar/README.md)。
+访问 [LinkRadar 在线报告](https://lyx0902.github.io/LinkRadar/)可探索已部署的结果；本地页面现已接入 as-skitter，线上需提交并部署更新。该静态报告不会在打开时重新运行算法，也不会自动导入新的计算结果；YouTube 与 as-skitter 的资源分别由导出脚本生成。详见 [Web 使用说明](web/linkradar/README.md)。
 
 ### 运行有限规模的 YouTube 实验
 
