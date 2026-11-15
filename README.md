@@ -5,7 +5,7 @@
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](pyproject.toml)
 [![Numba optional 0.68.x](https://img.shields.io/badge/Numba-optional%200.68.x-00A3E0)](pyproject.toml)
 
-[项目概览](#项目概览) · [快速开始](#快速开始) · [使用指南](#使用指南) · [项目架构](#项目架构) · [实际性能](#实际性能) · [详细文档](#详细文档)
+[项目概览](#项目概览) · [功能特性](#功能特性) · [项目架构](#项目架构) · [实际性能](#实际性能) · [快速开始](#快速开始) · [使用指南](#使用指南) · [详细文档](#详细文档)
 
 ## 项目概览
 
