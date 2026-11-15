@@ -5,7 +5,7 @@
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](pyproject.toml)
 [![Numba optional 0.68.x](https://img.shields.io/badge/Numba-optional%200.68.x-00A3E0)](pyproject.toml)
 
-[项目概览](#项目概览) · [功能特性](#功能特性) · [项目架构](#项目架构) · [实际性能](#实际性能) · [快速开始](#快速开始) · [使用指南](#使用指南) · [详细文档](#详细文档)
+[项目概览](#项目概览) · [功能特性](#功能特性) · [项目架构](#项目架构) · [实际性能](#实际性能) · [使用指南](#使用指南) · [详细文档](#详细文档)
 
 ## 项目概览
 
@@ -36,7 +36,7 @@ flowchart LR
     R -.->W["完成全源处理:<br/>四张真实图"]
 ```
 
-两条计算分支都基于 Brandes 算法：一条直接在原图上使用 Python 串行或多进程计算，另一条在商图上使用加权 Brandes，并以 Numba 编译、线程并行和边记录加速。商图保留外围树及其映射，通过源点权重和结果恢复计入原图节点。未完成的检查点保存的是核心累计贡献，并非最终中心性结果。静态报告独立展示已有结果，不会由商图任务自动生成。
+两条计算分支都基于 Brandes 算法：一条直接在原图上使用 Python 串行或多进程计算，另一条在商图上使用加权 Brandes，并以 Numba 编译、线程并行和边记录加速。商图保留外围树及其映射，通过源点权重和结果恢复计入原图节点。未完成的检查点保存的是核心累计贡献，并非最终中心性结果。
 
 ## 实际性能
 
@@ -49,7 +49,9 @@ flowchart LR
 | YouTube | 1,134,890 / 2,987,624 | CSR + 树商图 + Numba 编译加权 Brandes，8 线程、边记录和双快照 | 2 小时 30 分 37 秒 | 约 165 天（外推） | 约 1,577×（估算比） |
 | as-skitter | 1,696,415 / 11,095,298 | CSR + 树商图 + Numba 编译加权 Brandes，12 线程、边记录和双快照 | 约 13 小时 36 分 31 秒| — | — |
 
-## 快速开始
+## 使用指南
+
+### 快速开始
 
 需要 **Python 3.11 或更高版本**。在本地项目根目录的 Windows PowerShell 中执行：
 
@@ -60,15 +62,7 @@ python -m pip install -e ".[dev,compiled]"
 python -m parallel_bc demo --profile smoke
 ```
 
-离线 smoke 配置会使用种子 42 生成一张 80 节点的图，运行串行和并行案例，并与 NetworkX 比较。完成后终端会输出 `实验状态：complete；报告：results/.../report.md`。运行目录还包含解析后的配置、环境信息和验证记录。`compiled` 可选依赖用于安装大图处理所需的 Numba；smoke 示例本身不依赖 Numba。已记录的依赖快照见 [requirements-lock.txt](requirements-lock.txt)。
-
-其他 Shell 请使用对应平台的方式激活虚拟环境。本地示例不需要 API 密钥或用户自行配置的环境变量。
-
-## 使用指南
-
-### 查看现有报告
-
-访问 [LinkRadar 在线报告](https://lyx0902.github.io/LinkRadar/)可探索已部署的结果；本地页面现已接入 as-skitter，线上需提交并部署更新。该静态报告不会在打开时重新运行算法，也不会自动导入新的计算结果；YouTube 与 as-skitter 的资源分别由导出脚本生成。详见 [Web 使用说明](web/linkradar/README.md)。
+离线 smoke 配置会使用种子 42 生成一张 80 节点的图，运行串行和并行案例，并与 NetworkX 比较。完成后终端会输出 `实验状态：complete；报告：results/.../report.md`。运行目录还包含解析后的配置、环境信息和验证记录。`compiled` 可选依赖用于安装大图处理所需的 Numba；smoke 示例本身不依赖 Numba。已记录的依赖快照见 [requirements-lock.txt](requirements-lock.txt)。本地示例不需要 API 密钥或用户自行配置的环境变量。
 
 ### 数据处理命令
 
@@ -101,6 +95,10 @@ python -m parallel_bc quotient-run `
 示例结果目录须不存在；需要重新运行时可改用其他新目录。CPU 编号是当时机器的配置，其他机器应按实际可用逻辑 CPU 调整。`--timeout 28800` 为示例设置的单次会话 8 小时上限，并非全量耗时承诺；任务可能需要多次会话。
 
 中断或会话超时后，将原命令中的同一运行目录保留，并添加 `--resume` 继续；数据集、内核、线程数、批次、分块、种子及 CPU 亲和性须与原任务一致。终端每提交一块会显示已完成源组数，完整结果在全部源组及原图恢复完成后生成。续算和结果文件说明见[检查点与恢复说明](docs/Pipeline_and_Checkpoints.md)。
+
+### 查看现有报告
+
+访问 [LinkRadar 在线报告](https://lyx0902.github.io/LinkRadar/)可探索四个图网络示例的实验结果。YouTube 与 as-skitter 的资源分别由导出脚本生成。详见 [Web 使用说明](web/linkradar/README.md)。
 
 ## 详细文档
 
