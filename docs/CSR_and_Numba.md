@@ -2,7 +2,7 @@
 
 本篇沿用原单核与并行实现说明。基础 Brandes 数学见 [Algorithm.md](Algorithm.md)；树商图和边记录见 [Graph_Optimization.md](Graph_Optimization.md)。
 
-当前两张大图都使用 CSR、Numba 和源组级线程完成全源计算：YouTube 使用 8 线程，as-skitter 使用 12 线程；两者还使用树商图、边记录和双快照。下文早期单核及 1/2/4 线程测试是历史阶段实验，不是两次全源任务的完整配置；结果分别见 [YouTube 全量报告](Youtube全量处理报告.md)和 [as-skitter 全量报告](as-skitter全量处理报告.md)。
+四张真实图均已使用 CSR、Numba、源组级线程、树商图、边记录与双快照完成全源计算：Facebook 和 ca-GrQc 的 4 线程单次监督墙钟分别为 2.172 秒、1.528 秒；YouTube 使用 8 线程，as-skitter 使用 12 线程。小图验证和计时口径见[实验结果](RESULTS.md#small-graph-dag)；大图见 [YouTube 全量报告](Youtube全量处理报告.md)和 [as-skitter 全量报告](as-skitter全量处理报告.md)。下文早期单核及 1/2/4 线程测试是独立的历史阶段实验。
 
 <a id="youtube-csr"></a>
 

@@ -73,3 +73,19 @@
 @media(max-width:750px){.architecture-panel{padding:0}.principle-block{grid-template-columns:1fr;gap:12px;padding:21px 0}.principle-heading{margin-top:30px}.project-meta{margin:0}.github-link{margin-top:0;padding:6px 0}}
 
 .brand-logo{display:block;width:180px;max-width:100%;height:auto}
+
+/* Wide research register: wrap long entries for horizontal scrolling. */
+.tracking-panel{padding:24px}
+.tracking-panel h2{font-size:20px;margin:3px 0 0}
+.tracking-hint{color:var(--muted);font-size:12px;margin:6px 0 16px}
+.tracking-scroll{border:1px solid var(--line);border-radius:8px}
+.tracking-table{table-layout:fixed;min-width:1530px;white-space:normal}
+.tracking-table col:nth-child(1){width:78px}.tracking-table col:nth-child(2){width:80px}.tracking-table col:nth-child(3){width:160px}.tracking-table col:nth-child(4){width:165px}.tracking-table col:nth-child(5){width:210px}.tracking-table col:nth-child(6){width:235px}.tracking-table col:nth-child(7){width:90px}.tracking-table col:nth-child(8){width:145px}.tracking-table col:nth-child(9){width:335px}
+.tracking-table th,.tracking-table td{vertical-align:top;line-height:1.8;overflow-wrap:anywhere}
+.tracking-table thead th{font-size:11px;font-weight:650;color:#496b5a}
+.tracking-table tbody th{background:#fff;color:#176c5d;font-size:12px;font-weight:700;border-bottom:1px solid #edf1ec}
+.tracking-table tbody tr:nth-child(even) td,.tracking-table tbody tr:nth-child(even) th{background:#f8faf7}
+.tracking-status{display:inline-block;border-radius:4px;padding:2px 6px;font-size:10px;line-height:1.5;letter-spacing:.1px;font-weight:700}
+.status-done{color:#286b4e;background:#e4f2e7}.status-limited{color:#80623c;background:#f6efdf}.status-todo{color:#536d80;background:#e8f0f5}.status-deferred{color:#795c69;background:#f3e9ee}
+.tracking-rules h3{margin-top:5px}.tracking-rules ul{margin:14px 0 0;padding-left:20px;color:#526b5d}.tracking-rules li{margin:8px 0;line-height:1.9;font-size:12px}
+@media(max-width:750px){.tracking-panel{padding:18px}.tracking-panel .panel-head{align-items:flex-start}.tracking-panel h2{font-size:17px}.tracking-scroll{margin:0 -2px}}

@@ -2,7 +2,7 @@
 
 本篇说明数学定义、单源最短路和反向累积；编译与并行实现见 [CSR 与 Numba](CSR_and_Numba.md)，项目带权商图见 [图结构优化](Graph_Optimization.md)。
 
-这一数学定义同时用于已完成全源计算的 YouTube 与 as-skitter 图。项目以带权树商图分组减少需要遍历的源组，并在完成后恢复原图节点贡献；这改变执行方式，不把外围节点从原问题中删除。两次运行及核验边界见 [YouTube 报告](Youtube全量处理报告.md)和 [as-skitter 报告](as-skitter全量处理报告.md)。
+这一数学定义用于 Facebook、ca-GrQc、YouTube 与 as-skitter 四张已完成优化链路全源计算的图。项目以带权树商图分组减少需要遍历的源组，并在完成后恢复原图节点贡献；这改变执行方式，不把外围节点从原问题中删除。两张大图的运行及核验边界见 [YouTube 报告](Youtube全量处理报告.md)和 [as-skitter 报告](as-skitter全量处理报告.md)。
 
 ## 介数中心性是什么
 

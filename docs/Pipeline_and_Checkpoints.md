@@ -1,10 +1,12 @@
 # 当前计算链路与检查点
 
-当前 YouTube 和 as-skitter 大图全源入口 `quotient-run`：原始边列表 → CSR 缓存 → 外围树无损分解及端点数量 → 按核心锚点分组 → Numba 边记录内核与源级线程 → 分组检查点 → 全部源组完成后恢复原图并归一化。详细算法见 [Algorithm.md](Algorithm.md)，CSR 与线程见 [CSR_and_Numba.md](CSR_and_Numba.md)，树商图和边记录见 [Graph_Optimization.md](Graph_Optimization.md)。
+当前四张真实图使用的优化全源入口 `quotient-run`：原始边列表 → CSR 缓存 → 外围树无损分解及端点数量 → 按核心锚点分组 → Numba 边记录内核与源级线程 → 分组检查点 → 全部源组完成后恢复原图并归一化。详细算法见 [Algorithm.md](Algorithm.md)，CSR 与线程见 [CSR_and_Numba.md](CSR_and_Numba.md)，树商图和边记录见 [Graph_Optimization.md](Graph_Optimization.md)。
 
 2026-11-06 的新建 8 线程双快照任务已完成全源：每块 2,048 核心源组，累计 230 块；第一次因系统可用内存低于 1 GiB 预留线中止，第二次续算完成，两次监督墙钟合计 9,037.049 秒，不含中间停顿。全源覆盖和文件哈希通过核验；外围节点结构公式全部一致，核心节点未做另一套算法的全图逐点对照。数据和验证边界见[全量汇总报告](Youtube全量处理报告.md)。
 
 2026-11-14 的 as-skitter 全源任务使用同一大模块链路、12 线程和每块 2,048 组，完成 1,464,020 个需遍历核心源组及 715 次提交；纯树分量由解析恢复处理。四份现存会话监督墙钟共 48,990.660 秒，不含会话停顿，人工中断可能没有完整会话记录。源覆盖、结果哈希及外围节点结构公式核验通过，核心最终全源结果未独立逐点重算。详见 [as-skitter 全量报告](as-skitter全量处理报告.md)。
+
+2026-11-15 的 Facebook 和 ca-GrQc 各以 4 线程、每块 2,048 组运行一次相同链路，分别提交 2 块；全源计算会话监督墙钟为 2.172 秒和 1.528 秒。两图的新结果与此前通过 NetworkX 对照的 Python 结果按原始 ID 逐节点比较通过；本次未重新运行 NetworkX，详细口径见[实验结果](RESULTS.md#small-graph-dag)。
 
 默认 CLI 使用 `dag` 内核，新建任务采用双累计快照检查点。旧 8.06% 检查点必须使用 `--kernel legacy`，不得将不同内核的分组直接混合。恢复时默认根据已有清单格式选择快照或旧分组模式；旧的 Python API `parallel_bc.quotient_checkpoint` 仍使用 legacy，逐块 dag API 是 `parallel_bc.quotient_checkpoint_dag`，双快照 API 是 `parallel_bc.quotient_snapshot`。
 
