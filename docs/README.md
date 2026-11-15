@@ -11,18 +11,15 @@
 7. [实验与结果](RESULTS.md)：性能、数据和结构发现。
 8. [提速历程与全量耗时估算](Youtube提速历程.md)：每一阶段的时间变化。
 9. [YouTube 全量汇总报告](Youtube全量处理报告.md)：本次全源结果、耗时和正确性核验。
+10. [as-skitter 全量处理报告](as-skitter全量处理报告.md)：全源结果、会话记录、正确性核验和优化实验。
 
-`node_insights/` 是独立的自动生成展示附件，不计入上述九份文档。
-
-[as-skitter 数据与实验](as-skitter_数据与实验.md) 汇总数据准备、全量耗时估算和优化实验，是独立调研附录，不计入上述九份主文档。
+`node_insights/` 是独立的自动生成展示附件，不计入上述十份主文档。
 
 <a id="project-guide"></a>
 
 <a id="project-guide-content"></a>
 
 ## LinkRadar：项目整体说明
-
-本篇先解释完整项目，不要求读者先会图算法或 Python 多进程。
 
 ### 1. 用一个问题理解项目
 
@@ -54,7 +51,7 @@
 
 本项目默认用**全图精确介数**给“关键节点”排序。Facebook的58号节点只有12个邻居，度排名第2918，但介数第9；1085号介数第5，却不是割点。二者是展示“连接多”与“中转作用强”不同的具体例子。
 
-“精确”表示所有节点都作为起点参与计算，没有抽样起点；贡献仍用float64，允许浮点舍入误差，不能说任意精度完全无误差。
+“精确”表示所有节点都作为起点参与计算，没有抽样起点；贡献仍用float64，允许浮点舍入误差。
 
 ### 4. 系统从输入走到输出
 
@@ -63,10 +60,10 @@
 | 步骤 | 实际做了什么 | 留下的可检查产物 |
 |---|---|---|
 | 获取数据 | 注册的官方URL下载、用户手工导入，或固定种子生成合成图 | 原文件来源、实际SHA256与清洗元数据 |
-| 确定图结构 | 去自环、无向去重、保留全部已知节点和分量，整数ID升序映射，邻居排序 | 安全NPZ缓存、JSON元数据、ID映射 |
-| 算介数 | 自写Brandes，得到每个节点的raw和normalized分数 | 全节点中心性CSV，不只输出前十 |
+| 确定图结构 | 去自环、无向去重、保留全部已知节点和分量，整数ID升序映射，邻居排序 | NPZ或CSR缓存、JSON元数据、ID映射 |
+| 算介数 | 自写Brandes，得到每个节点的raw和normalized分数 | 小图中心性CSV或大图全节点分数数组 |
 | 做并行 | 早期使用多个进程分担起点；当前大图编译内核使用源级线程，共享只读 CSR、各自保留工作区 | 实际进程或线程、起点数、批次数、分阶段时间 |
-| 验证与计时 | 全节点对照NetworkX，串并行相互核对，再重复计时 | validation.json、原始计时CSV、汇总CSV |
+| 验证与计时 | 支持的案例对照NetworkX，小图核对串并行，大图核验源覆盖、输出哈希及外围恢复 | 验证记录、原始计时和运行清单 |
 | 检验结构意义 | 按固定原图介数、度数和多次随机顺序删除节点 | 最大连通分量曲线、随机经验分位带 |
 | 展示 | 导出Top10图、散点图、局部图及中文交互页面 | [当前结果](RESULTS.md#results)、参数报告、可筛选网页 |
 
@@ -100,18 +97,20 @@ T的邻居数不是唯一判断依据，但它位于U与其余节点之间，因
 
 几千个节点的文件并不大；耗时主要来自“从每一个起点都遍历并累计一次”的重复计算。不同起点之间可独立得到贡献，这正是本项目的并行机会。接着读[并行计算说明](CSR_and_Numba.md#process-parallel)。
 
-### 6. 两张真实图是什么，现在是否已经拿到
+### 6. 数据集
 
-**Facebook 与 ca-GrQc 已手工导入，并已完成各自全图正确性、性能与失效实验。** YouTube 于 2026-11-06 完成全源计算：470,164 个核心源组覆盖全部 1,134,890 个原始源点，两次会话监督墙钟合计约 2 小时 30 分 37 秒；完整性核验与独立正确性对照的范围见[全量汇总报告](Youtube全量处理报告.md)。早期自动下载TLS失败只是历史记录。
+| 数据 | 节点与连接 | 清洗后节点 / 无向边 | 分量 / 最大分量节点 | 已完成工作与范围 |
+|---|---|---:|---:|---|
+| Facebook | 采样自我网络中的匿名用户与好友连接 | 4,039 / 88,234 | 1 / 4,039 | 全源介数、全节点参照、性能和固定排名失效实验；不代表完整 Facebook 平台。 |
+| ca-GrQc | 相关领域论文作者及合作关系 | 5,242 / 14,484 | 355 / 4,158 | 全源介数、全节点参照、性能和固定排名失效实验；分数不是作者学术贡献排名。 |
+| YouTube | 用户与好友连接 | 1,134,890 / 2,987,624 | 1 / 1,134,890 | 已完成全源计算及原图恢复；两次会话监督墙钟合计约 2 小时 30 分 37 秒。 |
+| as-skitter | 由 traceroute 测量得到的互联网拓扑节点及连接 | 1,696,415 / 11,095,298 | 756 / 1,694,616 | 已完成全源计算及原图恢复；四份现有会话记录监督墙钟合计约 13 小时 36 分 31 秒。 |
 
-| 数据 | 节点含义 | 清洗后节点/边 | 分量 / 最大分量 | 边界 |
-|---|---|---|---|---|
-| Facebook | 采样自我网络中的匿名用户与好友连接 | 4039 / 88234 | 1 / 4039 | 不代表完整Facebook平台 |
-| ca-GrQc | 相关领域论文作者及合作关系 | 5242 / 14484 | 355 / 4158 | 不是作者学术贡献排名 |
+两张小图的全节点分数已与 NetworkX 对照。两张大图均完成源覆盖、结果哈希和外围树恢复核验；核心节点的最终全源结果尚未使用另一套算法做全图逐点重算。YouTube 的墙钟合计不包含两次会话之间的停顿；as-skitter 的合计仅基于现有四份会话记录，人工中断可能没有完整会话记录。详细验证范围分别见 [YouTube 全量处理报告](Youtube全量处理报告.md)和 [as-skitter 全量处理报告](as-skitter全量处理报告.md)。
 
-本地原文件审计显示：Facebook没有自环与重复边；ca-GrQc每条非自环无向边正反各出现一次，另有12个不同自环。14484条普通无向边加12个自环为14496，与元数据保留的官方统计一致；按简单图协议移除自环后得到14484条边，所有5242个节点保留。审计见 [real_data_audit.json](node_insights/real_data_audit.json)。
+本地原文件审计显示：Facebook没有自环与重复边；ca-GrQc每条非自环无向边正反各出现一次，另有12个不同自环。14484条普通无向边加12个自环为14496，与元数据保留的官方统计一致；按简单图协议移除自环后得到14484条边，所有5242个节点保留。审计见 [real_data_audit.json](node_insights/real_data_audit.json)。 清洗会先收集自环涉及节点再去自环，避免误删节点；显式节点列表还可补充从未出现在边列表中的孤立点。默认不只取最大分量。图指纹包含节点映射和孤立点信息。
 
-清洗会先收集自环涉及节点再去自环，避免误删节点；显式节点列表还可补充从未出现在边列表中的孤立点。默认不只取最大分量。图指纹包含节点映射和孤立点信息，不能仅用边数认定两次输入相同。
+as-skitter 原文件头提到 22,622 个零度节点，但本地边表中的 1,696,415 个 ID 均出现在边中，缓存记录的孤立点为 0。当前 SNAP 解析器不会从文件头自动补入未出现在边表中的孤立点；本次报告以实际边表和缓存为准。
 
 除真实图外，项目支持ER随机图、BA优先连接图和SBM社区图，用于离线演示、控制规模及任务粒度。它们与真实图分开命名、保存和解释。
 
@@ -129,21 +128,13 @@ T的邻居数不是唯一判断依据，但它位于U与其余节点之间，因
 | 输出 | [plotting.py](../src/parallel_bc/plotting.py)、[reporting.py](../src/parallel_bc/reporting.py) | CSV汇总、真实图表和中文实验报告 |
 | 展示附件 | [export_node_insights.py](../scripts/export_node_insights.py)、[本地Web](../web/linkradar/README.md) | 前十参数、全图割点、局部解释图及交互页面 |
 
-NumPy用于分数向量，NetworkX用于参照、合成图及部分结构分析，Matplotlib用于画图。**全图介数主体不是简单调用NetworkX包装出来的**：serial与两个并行版本都执行自己的同一单源内核。浏览器不重新计算介数，打开几个网页也不等于并行计算。
-
-### 8. 完成程度与展示责任
-
-已经实现：数据获取与导入、确定性清洗、同核心精确串并行、真实spawn、全节点正确性、预算与回收、重复计时、固定排名失效、参数CSV、真实图表、中文本地交互页面。实际结果见[统一报告](RESULTS.md#results)。
-
-尚未执行或尚未实现：完整full五次重复与最高8进程矩阵、真实图批次大小扫描、独立粗粒度静态补充模式、编译版多进程共享内存对照、加权/有向/近似介数，以及网页实时提交计算服务。CSR、Numba 和线程共享只读图已实现；不能把配置存在当作实验已执行。
-
-讲解时可以说“本项目实现并验证了这些机制”。个人贡献应按实际协作交代：方案、数据准备、AI辅助编码、审查与实验各有什么参与，不能凭当前文件反推“全部代码均独立手写”。
-
-### 9. 参考与来源
+### 8. 参考与来源
 
 - 算法：Ulrik Brandes, *A Faster Algorithm for Betweenness Centrality*, 2001，[DOI](https://doi.org/10.1080/0022250X.2001.9990249)。
 - 对照语义：[NetworkX betweenness_centrality 公共API](https://networkx.org/documentation/stable/reference/algorithms/generated/networkx.algorithms.centrality.betweenness_centrality.html)。
 - Facebook：[官方说明](https://snap.stanford.edu/data/ego-Facebook.html)、[合并边列表](https://snap.stanford.edu/data/facebook_combined.txt.gz)。引用 McAuley & Leskovec, *Learning to Discover Social Circles in Ego Networks*, NIPS 2012。
 - ca-GrQc：[官方说明](https://snap.stanford.edu/data/ca-GrQc.html)、[边列表](https://snap.stanford.edu/data/ca-GrQc.txt.gz)。引用 Leskovec, Kleinberg & Faloutsos, *Graphs over Time: Densification Laws, Shrinking Diameters and Possible Explanations*, KDD 2005。
+- YouTube：本项目实际使用手工下载的 [youtube.zip](https://github.com/dange-academic/real_network_datasets/blob/main/PRE2020/youtube.zip)，解压得到 KONECT 格式边列表；数据集含义与统计可参考 [KONECT YouTube friendships](https://konect.cc/networks/com-youtube/)。本次结果及节点编号以实际导入文件和[全量处理报告](Youtube全量处理报告.md)为准。
+- as-skitter：数据集描述和下载地址见 [SNAP as-skitter](https://snap.stanford.edu/data/as-skitter.html)，其页面引用 Leskovec、Kleinberg 和 Faloutsos 的 *Graphs over Time*，KDD 2005。本地文件为手工导入，缓存元数据未保留下载网址，不能仅凭名称和规模确认与官方文件字节一致；实际审计与结果见 [as-skitter 全量处理报告](as-skitter全量处理报告.md)。
 
 官方统计、来源描述与本地实际清洗统计分别保留。原文件SHA用于本地一致性核对，没有声称已独立核验官方发布哈希；公开下载也不等于任意再分发许可，使用时保留来源与引用并查看官方说明。

@@ -1,8 +1,10 @@
 # 当前计算链路与检查点
 
-当前 YouTube 全源入口 `quotient-run`：原始边列表 → CSR 缓存 → 外围树无损分解及端点数量 → 按核心锚点分组 → Numba 边记录内核与源级线程 → 分组检查点 → 全部源组完成后恢复原图并归一化。详细算法见 [Algorithm.md](Algorithm.md)，CSR 与线程见 [CSR_and_Numba.md](CSR_and_Numba.md)，树商图和边记录见 [Graph_Optimization.md](Graph_Optimization.md)。
+当前 YouTube 和 as-skitter 大图全源入口 `quotient-run`：原始边列表 → CSR 缓存 → 外围树无损分解及端点数量 → 按核心锚点分组 → Numba 边记录内核与源级线程 → 分组检查点 → 全部源组完成后恢复原图并归一化。详细算法见 [Algorithm.md](Algorithm.md)，CSR 与线程见 [CSR_and_Numba.md](CSR_and_Numba.md)，树商图和边记录见 [Graph_Optimization.md](Graph_Optimization.md)。
 
 2026-11-06 的新建 8 线程双快照任务已完成全源：每块 2,048 核心源组，累计 230 块；第一次因系统可用内存低于 1 GiB 预留线中止，第二次续算完成，两次监督墙钟合计 9,037.049 秒，不含中间停顿。全源覆盖和文件哈希通过核验；外围节点结构公式全部一致，核心节点未做另一套算法的全图逐点对照。数据和验证边界见[全量汇总报告](Youtube全量处理报告.md)。
+
+2026-11-14 的 as-skitter 全源任务使用同一大模块链路、12 线程和每块 2,048 组，完成 1,464,020 个需遍历核心源组及 715 次提交；纯树分量由解析恢复处理。四份现存会话监督墙钟共 48,990.660 秒，不含会话停顿，人工中断可能没有完整会话记录。源覆盖、结果哈希及外围节点结构公式核验通过，核心最终全源结果未独立逐点重算。详见 [as-skitter 全量报告](as-skitter全量处理报告.md)。
 
 默认 CLI 使用 `dag` 内核，新建任务采用双累计快照检查点。旧 8.06% 检查点必须使用 `--kernel legacy`，不得将不同内核的分组直接混合。恢复时默认根据已有清单格式选择快照或旧分组模式；旧的 Python API `parallel_bc.quotient_checkpoint` 仍使用 legacy，逐块 dag API 是 `parallel_bc.quotient_checkpoint_dag`，双快照 API 是 `parallel_bc.quotient_snapshot`。
 
@@ -43,6 +45,8 @@ A_V    = E(K) + T_V
 `D_r` 是保留全部目标数量权重的核心依赖；`E` 把核心向量放回原始锚点位置，外围位置补零；`T_V` 是全源条件下的树路径及锚点端点修正。由源集合的不交并和求和可加性，分组不改变 `K`。`T_V` 只加入一次；若每个检查点都加入完整的 `T_V`，就会重复计数。数值上仍允许不同求和分组引起的浮点舍入差异。
 
 YouTube 的计划有470,164个核心源组，完整恢复1,134,890个原始节点。若每1024个源组提交一次，共460个检查点；本次已完成任务使用每块2048组，共230次提交。调度微批次 `--batch-size 4` 与持久化分组 `--chunk-size` 是两个参数。
+
+as-skitter 有 1,464,757 个核心节点，其中 737 个是无核心边的纯树分量锚点；其余 1,464,020 个核心源组需遍历。每块 2,048 组实际提交 715 次，最后一块 1,748 组；纯树分量代表的 1,698 个原始源点在最终解析恢复时纳入。
 
 ### 旧逐块文件模式的提交和恢复
 
@@ -97,3 +101,5 @@ CPU编号来自本机审计，其他机器应选择自身可用CPU。`--max-chun
 ```
 
 该工具核对当前快照、源组计划及商图映射；`code_matches_current` 表明本机代码指纹是否与任务创建时相同，不代表已核对运行依赖和CPU亲和性。完整任务的最终文件以清单完成标记和输出哈希为准。
+
+实际已完成目录分别为 `results/youtube_all_snapshot_8t_2048/` 和 `results/as_skitter_full_12t_2048/`，与各自 `data/processed/youtube_csr_treeq/`、`data/processed/as-skitter_csr_treeq/` 配对。最终数组以对应商图的 `original_ids.npy` 映射原始编号；这两个本地产物目录默认不随仓库发布。完整取用示例及验证限制见各自全量报告。

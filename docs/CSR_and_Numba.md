@@ -2,6 +2,8 @@
 
 本篇沿用原单核与并行实现说明。基础 Brandes 数学见 [Algorithm.md](Algorithm.md)；树商图和边记录见 [Graph_Optimization.md](Graph_Optimization.md)。
 
+当前两张大图都使用 CSR、Numba 和源组级线程完成全源计算：YouTube 使用 8 线程，as-skitter 使用 12 线程；两者还使用树商图、边记录和双快照。下文早期单核及 1/2/4 线程测试是历史阶段实验，不是两次全源任务的完整配置；结果分别见 [YouTube 全量报告](Youtube全量处理报告.md)和 [as-skitter 全量报告](as-skitter全量处理报告.md)。
+
 <a id="youtube-csr"></a>
 
 ### 输入与来源
@@ -10,6 +12,8 @@
 用户提供：https://github.com/dange-academic/real_network_datasets/blob/main/PRE2020/youtube.zip 。
 该仓库README将YouTube条目指向KONECT。它不是本项目从SNAP成功下载的文件。
 原文件审计：data/raw/youtube/local_audit.json；参考规模1134890节点、2987624唯一无向边。
+
+as-skitter 使用手工导入的 `data/raw/as-skitter/as-skitter.txt.gz`，按 SNAP 格式读取，CSR 缓存为 `data/processed/as-skitter_csr/`。本地边表得到 1,696,415 个节点和 11,095,298 条无向边；文件头提到的 22,622 个零度节点没有从头部自动补入。本地缓存元数据未保留下载网址，数据来源及边界见 [as-skitter 全量报告](as-skitter全量处理报告.md)。
 
 ### 生成独立CSR缓存
 
@@ -90,7 +94,7 @@ Windows还采样private bytes；系统最小可用内存和采样间隔单列。
 
 ## 编译版单核 Brandes：实现原理、运行与验证
 
-本轮实现 `numba_csr` 可选后端，处理完整的无权无向 CSR 图。这里的“编译”指把数值循环转换为 CPU 机器码；不是 GPU 计算，也没有开启多线程、结构压缩或近似采样。旧 Python 任意精度内核和旧全源计算/失效实验接口保留。
+本节历史单核实验使用 `numba_csr` 可选后端，处理完整的无权无向 CSR 图。这里的“编译”指把数值循环转换为 CPU 机器码；该单核实验没有开启多线程、结构压缩或近似采样。当前大图主链路则已结合后续的线程并行与树商图。旧 Python 任意精度内核和旧全源计算/失效实验接口保留。
 
 本说明描述单核后端；随后新增的源级线程并行和同后端1/2/4线程比较见[多核实现说明](CSR_and_Numba.md#compiled-parallel)。
 
